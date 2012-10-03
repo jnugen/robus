@@ -76,8 +76,8 @@ AFLAGS   		+= -I$(FWLIB_INC_DIR) -I$(CMCORE_INC_DIR) -I$(DEVICE_INC_DIR) -gdwarf
 
 
 
-#CC		 		= $(GNUTOOLS)/arm-none-eabi-gcc
-CC       		= $(GNUTOOLS)/arm-none-eabi-gcc-$(GNU_VERSION)
+CC	 		= $(GNUTOOLS)/arm-none-eabi-gcc
+#CC       		= $(GNUTOOLS)/arm-none-eabi-gcc-$(GNU_VERSION)
 AS       		= $(GNUTOOLS)/arm-none-eabi-as
 AR       		= $(GNUTOOLS)/arm-none-eabi-ar -r
 LD       		= $(GNUTOOLS)/arm-none-eabi-gcc
