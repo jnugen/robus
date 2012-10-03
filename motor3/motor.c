@@ -1,0 +1,29 @@
+#include "lpc17xx_gpio.h"
+#include "lpc17xx_libcfg.h"
+
+#define IN1_PIN	(1<<4)
+#define IN2_PIN (1<<5)
+
+void motor_forward(void)
+{
+    GPIO_ClearValue(2, IN2_PIN);
+    GPIO_SetValue(2, IN1_PIN);
+}
+
+void motor_reverse(void)
+{
+    GPIO_ClearValue(2, IN1_PIN);
+    GPIO_SetValue(2, IN2_PIN);
+}
+
+void motor_stop(void)
+{
+    GPIO_ClearValue(2, IN1_PIN + IN2_PIN);
+}
+
+int motor_init(void)
+{
+  GPIO_SetDir(2, IN1_PIN + IN2_PIN, 1);
+
+  motor_stop();
+}

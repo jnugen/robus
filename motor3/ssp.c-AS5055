@@ -1,0 +1,94 @@
+#include "lpc17xx_ssp.h"
+#include "lpc17xx_libcfg.h"
+#include "lpc17xx_pinsel.h"
+//#include "lpc17xx_gpio.h"
+
+/************************** PRIVATE DEFINTIONS ************************/
+#define SSEL_PORT 0
+#define SSEL_PIN 16
+//#define SSEL_PIN (1<<16)
+#define SCK_PIN (1<<20)
+#define MISO_PIN (1<<23)
+
+#define AS5055_CMD_NOP 0x0000
+#define AS5055_CMD_READ_ANGLE 0xFFFF
+
+/************************** PRIVATE VARIABLES *************************/
+
+/************************** PRIVATE FUNCTIONS *************************/
+
+/*-------------------------PRIVATE FUNCTIONS------------------------------*/
+
+/*-------------------------MAIN FUNCTION------------------------------*/
+/*********************************************************************//**
+ * @brief		c_entry: Main SSP program body
+ * @param[in]	None
+ * @return 		int
+ **********************************************************************/
+int ssp_init(void)
+{
+	PINSEL_CFG_Type PinCfg;
+	SSP_CFG_Type SSP_ConfigStruct;
+
+	// Config P0[16] as the slave select
+	//GPIO_SetDir(SSEL_PORT, SSEL_PIN, 1);
+	//GPIO_SetValue(SSEL_PORT, SSEL_PIN);
+
+	/*
+	 * Initialize SPI pin connect
+	 * P0.16 - SSEL0
+	 * P1.20 - SCK0
+	 * P1.23 - MISO0
+	 * P1.24 - MOSI0
+	 * P1.30 - (connected to P1.20)
+	 */
+	PinCfg.OpenDrain = PINSEL_PINMODE_NORMAL;
+	PinCfg.Pinmode = PINSEL_PINMODE_PULLUP;
+	PinCfg.Funcnum = PINSEL_FUNC_2;
+	PinCfg.Portnum = SSEL_PORT;
+	PinCfg.Pinnum = SSEL_PIN;
+	PINSEL_ConfigPin(&PinCfg);
+	PinCfg.Funcnum = PINSEL_FUNC_3;
+	PinCfg.Portnum = 1;
+	PinCfg.Pinnum = 20;
+	PINSEL_ConfigPin(&PinCfg);
+	PinCfg.Pinnum = 23;
+	PINSEL_ConfigPin(&PinCfg);
+	PinCfg.Pinnum = 24;
+	PINSEL_ConfigPin(&PinCfg);
+
+	// initialize SSP configuration structure to default
+	SSP_ConfigStructInit(&SSP_ConfigStruct);
+	//SSP_ConfigStruct.CPHA = SSP_CPHA_FIRST;
+	SSP_ConfigStruct.CPOL = SSP_CPOL_LO;
+	SSP_ConfigStruct.ClockRate = 400000;
+	SSP_ConfigStruct.Databit = SSP_DATABIT_16;
+	//SSP_ConfigStruct.Mode = SSP_MASTER_MODE;
+	//SSP_ConfigStruct.FrameFormat = SSP_FRAME_SPI;
+
+	// Initialize SSP peripheral with parameter given in structure above
+	SSP_Init(LPC_SSP0, &SSP_ConfigStruct);
+
+	// Enable SSP peripheral
+	SSP_Cmd(LPC_SSP0, ENABLE);
+}
+
+int ssp_read(void)
+{
+	uint16_t val;
+
+	//GPIO_ClearValue(SSEL_PORT, SSEL_PIN);
+
+	SSP_SendData(LPC_SSP0, AS5055_CMD_READ_ANGLE);
+	while (SSP_GetStatus(LPC_SSP0, SSP_STAT_BUSY));
+	val = SSP_ReceiveData(LPC_SSP0);
+	// first read is junk
+
+	SSP_SendData(LPC_SSP0, AS5055_CMD_NOP);
+	while (SSP_GetStatus(LPC_SSP0, SSP_STAT_BUSY));
+	val = SSP_ReceiveData(LPC_SSP0);
+
+	//GPIO_SetValue(SSEL_PORT, SSEL_PIN);
+
+	return (int)val;
+}

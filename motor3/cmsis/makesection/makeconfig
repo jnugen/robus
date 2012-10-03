@@ -1,0 +1,24 @@
+########################################################################
+#
+# Configuration file for "make" session. 
+#
+########################################################################
+
+########################################################################
+#
+# Note: 
+# Add path of "tools" directory (in this folder) 
+# to the HEAD of SYSTEM PATH variable
+#
+########################################################################
+
+PROJ_ROOT			=$(HOME)/projects/nxp/wayne/motor3
+CMCORE_TYPE			=CM3
+DEVICE				=LPC17xx
+MANUFACTURE			=NXP
+TOOL 				=gnu
+DEBUG_MODE			=1
+
+
+GNU_INSTALL_ROOT	=$(HOME)/CodeSourcery/arm-tools
+GNU_VERSION			=4.6.3
