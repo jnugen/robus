@@ -1,14 +1,15 @@
 *#
 *~
-*.o
-*.map
-*.hex
-*.srec
+*.drl
+*.bak
 *.elf
+*.hex
+*.map
+*.o
 *.parts
-*.pyc
 *.pdf
 *.ps
+*.pyc
 
 # Directories:
 busduino
