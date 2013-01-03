@@ -1,7 +1,6 @@
-*.o
-*.map
-*.hex
-*.srec
-*.elf
-*.wrn
+# Directories
+rev_a
+rev_b
+rev_c
+rev_d
 
