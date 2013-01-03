@@ -1,7 +1,6 @@
 #!/bin/sh
 
 # ARM tools definitions:
-#ARM_TOOLS_ROOT := /home/wayne/download/codesourcery/arm-2010q1
 ARM_TOOLS_BIN := $(ARM_TOOLS_ROOT)/bin
 ARM_TOOLS_BIN_PREFIX := $(ARM_TOOLS_BIN)/arm-none-eabi
 CC := $(ARM_TOOLS_BIN_PREFIX)-gcc
@@ -9,7 +8,9 @@ AS := $(ARM_TOOLS_BIN_PREFIX)-as
 OBJCOPY := $(ARM_TOOLS_BIN_PREFIX)-objcopy
 SIZE := $(ARM_TOOLS_BIN_PREFIX)-size
 
-CMSIS := cmsis
+PROJECT_ROOT := ..
+
+CMSIS := $(PROJECT_ROOT)/cmsis
 CMSIS_CORE := $(CMSIS)/core
 CMSIS_DRIVERS := $(CMSIS)/drivers
 
