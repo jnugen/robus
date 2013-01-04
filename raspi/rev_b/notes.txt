@@ -1,0 +1,26 @@
+Patches:
+
+1) Cut trace between Pin 3-U4 and C10.
+2) Add wire between N3-1 and C10.
+
+Notes:
+
+1) R8 points to C10; the real R8 is between R8 and C10.
+2) The footprint for D2 is confusing.  The diode got
+   installed backwards.
+3) U5 Pin 8 should be connected to N3 3V3 (pin3 1,17).
+4) The power traces for U4 are a little close to
+   to vias, one another, etc.
+5) Hook up the following voltages and pins:
+   N3-01 3.3V
+   N3-17 3.3V
+
+   N3-02 5V0
+   N3-04 5V0
+
+   N3-06 GND
+   N3-14 GND
+   N3-20 GND
+   N3-09 GND
+   N3-25 GND
+6) It would be nice to see the console output on boot-up.
