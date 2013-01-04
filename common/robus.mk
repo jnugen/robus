@@ -83,6 +83,9 @@ LD_FLAGS := \
     ${LD_LIBRARIES_GROUP} \
     ${MAP_FLAGS}
 
+common.o: $(COMMON)/common.c
+	$(CC) -c ${CFLAGS} $(COMMON)/common.c -o common.o
+
 # Dependencies for building CMS_CORE files.  All programs have these
 # files:
 core_cm3.o: $(CMSIS_CORE)/core_cm3.c
