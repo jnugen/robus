@@ -84,8 +84,11 @@ LD_FLAGS := \
     ${LD_LIBRARIES_GROUP} \
     ${MAP_FLAGS}
 
-serial.o: $(COMMON)/serial.c
-	$(CC) -c ${CFLAGS} $(COMMON)/serial.c -o serial.o
+# common object files:
+common.o: $(COMMON)/common.c
+	$(CC) -c ${CFLAGS} $(COMMON)/common.c -o common.o
+COMMON_OBJECTS := \
+    common.o
 
 # Dependencies for building CMS_CORE files.  All programs have these
 # files:
