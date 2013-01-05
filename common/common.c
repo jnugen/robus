@@ -2,6 +2,11 @@
 
 #include "common.h"
 
+#include "lpc17xx_uart.h"
+#include "lpc17xx_libcfg.h"
+#include "lpc17xx_pinsel.h"
+
+
 // Routine definitions from here on:
 
 // {Buffer} data structures and routines:
@@ -769,7 +774,7 @@ Serial Serial__initialize(
 	// Do not enable transmit interrupt here, since it is handled by
 	// uart_send() function, just to reset Tx Interrupt state for the
 	// first time
-	uart_transmit_interrupt_status = RESET;
+	uart_transmit_interrupt_status = (Logical)0;
 
 	if (interrupt_number >= 0) {
 	    // preemption = 1, sub-priority = {interrupt_priority}:
@@ -903,10 +908,10 @@ void Serial__interrupt_transmit(
     	UART_IntConfig(uart, UART_INTCFG_THRE, DISABLE);
 
 	// Reset Tx Interrupt state:
-    	uart_transmit_interrupt_status = RESET;
+    	uart_transmit_interrupt_status = (Logical)0;
     } else {
 	// Set Tx Interrupt state:
-	uart_transmit_interrupt_status = SET;
+	uart_transmit_interrupt_status = (Logical)1;
     	UART_IntConfig(uart, UART_INTCFG_THRE, ENABLE);
     }
 }
@@ -1051,7 +1056,7 @@ UInteger Serial__send(
     // If the current {uart_transmit_interrupt_status} is reset, it means
     // the Tx interrupt must be re-enabled via a call to
     // {Serial__interrupt_transmit}():
-    if (uart_transmit_interrupt_status == RESET) {
+    if (uart_transmit_interrupt_status == (Logical)0) {
 	Serial__interrupt_transmit(serial);
     } else {
 	// Otherwise, re-enable Tx Interrupt: */
@@ -1146,22 +1151,24 @@ void SysTick__delay (
 
 // {Uart} routines:
 
+volatile Logical uart_transmit_interrupt_status;
+
 // This routine is invoked everytime UART0 issues an intterupt.  This routine
-// hands both transmit and receive interrupts.
+// handles both transmit and receive interrupts.
 void UART0_IRQHandler(void)
 {
     Serial__interrupt(&Serial__uart0);
 }
 
 // This routine is invoked everytime UART0 issues an intterupt.  This routine
-// hands both transmit and receive interrupts.
+// handles both transmit and receive interrupts.
 void UART1_IRQHandler(void)
 {
     Serial__interrupt(&Serial__uart1);
 }
 
 // This routine is invoked everytime UART3 issues an intterupt.  This routine
-// hands both transmit and receive interrupts.
+// handles both transmit and receive interrupts.
 void UART3_IRQHandler(void)
 {
     Serial__interrupt(&Serial__uart3);

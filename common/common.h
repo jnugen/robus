@@ -3,11 +3,6 @@
 #ifndef COMMON_H_INCLUDED
 #define COMMON_H_INCLUDED 1
 
-// Eventually these 3 #includes get removed:
-#include "lpc17xx_uart.h"
-#include "lpc17xx_libcfg.h"
-#include "lpc17xx_pinsel.h"
-
 #include "buffer.h"
 #include "ring_buffer.h"
 #include "robus.h"

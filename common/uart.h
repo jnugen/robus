@@ -4,6 +4,8 @@
 #define UART_H_INCLUDED 1
 
 #include "types.h"
+//#include "lpc17xx_uart.h"
+#include "LPC17xx.h"
 
 // Typedefs {Uart}:
 typedef LPC_UART_TypeDef *Uart;
@@ -20,6 +22,6 @@ void UART2_IRQHandler(void);
 void UART3_IRQHandler(void);
 
 void uart_interrupt_error(Uart uart, UInteger line_flags);
-__IO FlagStatus uart_transmit_interrupt_status;
+extern volatile Logical uart_transmit_interrupt_status;
 
 #endif // UART_H_INCLUDED

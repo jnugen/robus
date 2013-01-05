@@ -3,6 +3,8 @@
 #ifndef TYPES_H_INCLUDED
 #define TYPES_H_INCLUDED 1
 
+#include <stdint.h>
+
 // Types start with first letter capitalized:
 
 // Scalar typedef's with first letter capitalized:

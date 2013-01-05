@@ -14,9 +14,9 @@ typedef struct Ring_Buffer__Struct *Ring_Buffer;
 #define RING_BUFFER__MASK (RING_BUFFER__SIZE - 1)
 
 struct Ring_Buffer__Struct {
-    __IO UByte head;			// Ring buffer head index
-    __IO UByte tail;			// Ring buffer tail index
-    __IO Frame frames[RING_BUFFER__SIZE]; // Ring buffer frame data
+    volatile UByte head;			// Ring buffer head index
+    volatile UByte tail;			// Ring buffer tail index
+    volatile Frame frames[RING_BUFFER__SIZE]; // Ring buffer frame data
 };
 
 // {Ring_Buffer} routines:
