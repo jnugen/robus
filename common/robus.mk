@@ -32,6 +32,7 @@ CMSIS_DRIVERS := $(CMSIS)/drivers
 INCLUDES := \
     -I$(CMSIS_DRIVERS)/include \
     -I$(CMSIS_CORE)/include \
+    -I$(COMMON) \
     -I.
 
 # All the other compiler flags:
@@ -83,8 +84,8 @@ LD_FLAGS := \
     ${LD_LIBRARIES_GROUP} \
     ${MAP_FLAGS}
 
-common.o: $(COMMON)/common.c
-	$(CC) -c ${CFLAGS} $(COMMON)/common.c -o common.o
+serial.o: $(COMMON)/serial.c
+	$(CC) -c ${CFLAGS} $(COMMON)/serial.c -o serial.o
 
 # Dependencies for building CMS_CORE files.  All programs have these
 # files:
