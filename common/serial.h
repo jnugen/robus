@@ -1,16 +1,18 @@
-// Copyright (c) 2011-2012 by IMC.  All rights reserved.
+// Copyright (c) 2011-2013 by IMC.  All rights reserved.
 
 #ifndef SERIAL_H_INCLUDED
 #define SERIAL_H_INCLUDED 1
 
-#include "lpc17xx_uart.h"
+// Types start with first letter capitalized:
+
 #include "types.h"
-#include "uart.h"
 #include "ring_buffer.h"
+#include "uart.h"
 
 // Typedefs for serial and robus UART's:
 typedef struct Serial__Struct *Serial;
 typedef enum Serial__Mode Serial_Mode;
+
 // The main serial for character I/O:
 struct Serial__Struct {		// {Serial} structure
     Uart uart;			// {Uart} to use
@@ -20,9 +22,11 @@ struct Serial__Struct {		// {Serial} structure
     struct Ring_Buffer__Struct receive_buffer;	// Actual receive buffer
     Ring_Buffer transmit;	// Pointer to {transmit_buffer}
     Ring_Buffer receive;	// Pointer to {receive_buffer}
-} Serial__uart0, Serial__uart1, Serial__uart3;
+};
 
-// {Serial} routines:
+// {Serial} data structures and routines:
+extern struct Serial__Struct Serial__uart0, Serial__uart1, Serial__uart3;
+
 UByte Serial__character_get(Serial serial);
 UByte Serial__character_peek(Serial serial);
 void Serial__character_preview(Serial serial,  UByte character);

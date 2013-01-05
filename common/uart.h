@@ -1,10 +1,11 @@
-// Copyright (c) 2011-2012 by IMC.  All rights reserved.
+// Copyright (c) 2011-2013 by IMC.  All rights reserved.
 
 #ifndef UART_H_INCLUDED
 #define UART_H_INCLUDED 1
 
 #include "types.h"
 
+// Typedefs {Uart}:
 typedef LPC_UART_TypeDef *Uart;
 
 // {Uart} routines:

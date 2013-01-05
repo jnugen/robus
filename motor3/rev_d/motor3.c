@@ -5,6 +5,17 @@
 #include "pwm.h"
 #include "motor.h"
 
+// Main routines:
+Integer main(void);
+Integer c_entry(void);
+Integer abs(Integer value);
+
+// Command parse routines:
+void command_id_show(Serial serial, Robus robus);
+void command_id_string_show(Serial serial, Robus robus);
+UByte command_id_byte_show(Serial serial, Robus robus);
+//void command_parse_navigate(Serial serial, Motor2 motor2, Shaft2 shaft2);
+
 // Routine definitions from here on:
 
 // Most compilers programs start from main...:
@@ -67,9 +78,6 @@ Integer c_entry(void)
     Frame frame9_out = (Frame)-1;
     Logical echo_surpress = (Logical)0;
 
-    Discovery discovery = Discovery__one_and_only;
-    Discovery__initialize(discovery, uart_8bit, uart_9bit);
-
     //led_init();
     motor_init();
     pwm_init();
@@ -127,8 +135,8 @@ Integer c_entry(void)
 	    } else if (high_bits >= 0) {
 		frame9_out = (frame8_in & 0x7f) | high_bits;
 		high_bits = (Frame)-1;
-	    } else if (frame8_in == 0xc4) {
-		Discovery__scan(discovery);
+	    //} else if (frame8_in == 0xc4) {
+	    //	Discovery__scan(discovery);
 	    } else if (frame8_in == 0xc5) {
 		// Reset the bus by sending break for 1ms:
 
@@ -280,76 +288,5 @@ Integer c_entry(void)
 
     // We never get here:
     return 1;
-}
-
-// {Discovery} data structures and routines:
-
-struct Discovery__Struct Discovery__one_and_only__struct;
-Discovery Discovery__one_and_only = &Discovery__one_and_only__struct;
-
-void Discovery__initialize(
-  Discovery discovery,
-  Uart uart_8bit,
-  Uart uart_9bit)
-{
-    discovery->low_address = 0;
-    discovery->high_address = 0;
-    discovery->top = -1;
-    discovery->uart_8bit = uart_8bit;
-    discovery->uart_9bit = uart_9bit;
-}
-
-// Perform MakerBus discovery:
-void Discovery__scan(
-  Discovery discovery)
-{
-    static UByte stack1[13] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
-    static UByte stack2[13] = {13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
-
-    Discovery__stack_send(discovery, stack1);
-    Discovery__stack_send(discovery, stack2);
-    Discovery__stack_send(discovery, stack1);
-
-    Discovery__byte_send(discovery, (UByte)'!');
-    Discovery__byte_send(discovery, (UByte)'\n');
-}
-
-void Discovery__stack_send(
-  Discovery discovery,
-  UByte *stack)
-{
-    UByte index;
-
-    Discovery__byte_send(discovery, (UByte)'@');
-    for (index = 0; index < 13; index++) {
-	Discovery__hex_send(discovery, stack[index]);
-    }
-    Discovery__byte_send(discovery, (UByte)'\n');
-}
-
-void Discovery__hex_send(
-  Discovery discovery,
-  UByte ubyte)
-{
-    static Character nibble[] = "0123456789abcdef";
-
-    ubyte &= 0xff;
-    Discovery__byte_send(discovery, nibble[ubyte >> 4]);
-    Discovery__byte_send(discovery, nibble[ubyte & 0xf]);
-}
-
-void Discovery__byte_send(
-  Discovery discovery,
-  UByte ubyte)
-{
-    Uart uart_8bit = discovery->uart_8bit;
-
-    // Check to see if there is an 8-bit value to send out and the
-    // 8-bit uart is ready to take it:
-    while ((uart_8bit->LSR & UART_LSR_THRE) == 0) {
-	// Wait until there is room:
-    }
-    // Send the byte on its merry way:
-    uart_8bit->THR = ubyte & UART_THR_MASKBIT;
 }
 

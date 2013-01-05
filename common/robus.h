@@ -1,16 +1,14 @@
-// Copyright (c) 2011-2012 by IMC.  All rights reserved.
+// Copyright (c) 2011-2013 by IMC.  All rights reserved.
 
 #ifndef ROBUS_H_INCLUDED
 #define ROBUS_H_INCLUDED 1
 
-#include "lpc17xx_uart.h"
-#include "lpc17xx_libcfg.h"
-#include "lpc17xx_pinsel.h"
+// Types start with first letter capitalized:
 
 #include "buffer.h"
+#include "serial.h"
 #include "types.h"
 #include "uart.h"
-#include "serial.h"
 
 // Typedefs for serial and robus UART's:
 typedef struct Robus__Struct *Robus;
@@ -24,10 +22,12 @@ struct Robus__Struct {
     Buffer get_buffer;		// Buffer of received bytes
     Buffer put_buffer;		// Buffer of bytes to send
     Uart uart;			// UART for data sending
-} Robus___null_struct;
-Robus Robus__null = &Robus___null_struct;
+};
 
 // {Robus} routines:
+extern struct Robus__Struct Robus___null_struct;
+extern Robus Robus__null;
+
 void Robus__request_begin(Robus robus, UByte address, UByte command);
 void Robus__request_ubyte_put(Robus robus, UByte ubyte);
 void Robus__request_flush(Robus robus);

@@ -3,6 +3,8 @@
 #ifndef TYPES_H_INCLUDED
 #define TYPES_H_INCLUDED 1
 
+// Types start with first letter capitalized:
+
 // Scalar typedef's with first letter capitalized:
 typedef int8_t Byte;
 typedef uint8_t Character;
@@ -20,4 +22,3 @@ typedef uint16_t UShort;
 typedef Short Frame;
 
 #endif // TYPES_H_INCLUDED
-

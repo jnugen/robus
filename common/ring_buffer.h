@@ -1,7 +1,9 @@
-// Copyright (c) 2011-2012 by IMC.  All rights reserved.
+// Copyright (c) 2011-2013 by IMC.  All rights reserved.
 
 #ifndef RING_BUFFER_H_INCLUDED
 #define RING_BUFFER_H_INCLUDED 1
+
+// Types start with first letter capitalized:
 
 #include "types.h"
 

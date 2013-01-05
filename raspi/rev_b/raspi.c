@@ -2,6 +2,46 @@
 
 #include "common.h"
 
+// Typedefs for serial and robus UART's:
+typedef struct Discovery__Struct *Discovery;
+
+#define DISCOVERY_READ_ONLY_BITS (6 * 8 + 1)
+#define DISCOVERY_READ_WRITE_BITS (8 - 1)
+#define DISCOVERY_TOTAL_BITS \
+  (DISCOVERY_READ_ONLY_BITS + DISCOVERY_READ_WRITE_BITS)
+#define DISCOVERY_LOW_ADDRESS_START 0
+#define DISCOVERY_HIGH_ADDRESS_START 0x80
+struct Discovery__Struct {
+    UByte low_address;		// Next low address to allocate
+    UByte high_address;		// Next high address to allocate
+    Logical stack[DISCOVERY_TOTAL_BITS]; // Stack to work with
+    Integer top;		// Current valid top bit in stack
+    Uart uart_8bit;		// 8-bit UART (up stream)
+    Uart uart_9bit;		// 9-bit UART (for bus)
+};
+
+// {Discovery} routines:
+extern struct Discovery__Struct Discovery__one_and_only__struct;
+extern Discovery Discovery__one_and_only;
+
+void Discovery__byte_send(Discovery discovery, UByte ubyte);
+void Discovery__hex_send(Discovery discovery, UByte uart_8bit);
+void Discovery__initialize(Discovery discovery, Uart uart8_bit, Uart uart9_bit);
+void Discovery__scan(Discovery discovery);
+void Discovery__stack_send(Discovery discovery, UByte *stack);
+
+// Main routines:
+Integer main(void);
+Integer c_entry(void);
+Integer abs(Integer value);
+
+// Command parse routines:
+void command_id_show(Serial serial, Robus robus);
+void command_id_string_show(Serial serial, Robus robus);
+UByte command_id_byte_show(Serial serial, Robus robus);
+//void command_parse_navigate(Serial serial, Motor2 motor2, Shaft2 shaft2);
+
+
 // Routine definitions from here on:
 
 // Most compilers programs start from main...:
