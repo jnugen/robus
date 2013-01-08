@@ -7,8 +7,9 @@
 //#include "lpc17xx_uart.h"
 #include "LPC17xx.h"
 
-// Typedefs {Uart}:
+// Typedefs {Uart} and {Uart1}:
 typedef LPC_UART_TypeDef *Uart;
+typedef LPC_UART1_TypeDef *Uart1;
 
 // {Uart} routines:
 void Uart__frame_put(Uart uart, UShort frame);

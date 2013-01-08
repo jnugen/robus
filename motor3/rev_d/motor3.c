@@ -39,9 +39,45 @@ Integer c_entry(void)
     Robus robus = Robus__null;
     Robus__initialize(robus, console, Buffer__get_buffer, Buffer__put_buffer);
 
+    Uart1 bus_uart = (Uart1)robus->bus_serial->uart;
+    if (bus_uart != LPC_UART1) {
+	Serial__string_put(console, "Serial Error 1\n");
+    }
+
     motor_init();
     pwm_init();
     ssp_init();
+
+    Integer index = 0;
+    while (1) {
+	if ((bus_uart->LSR & UART_LSR_RDR) != 0) {
+	    // Read the 9-bit {frame} from {bus_uart}:
+	    Frame frame = (Frame)0;
+	    // Grab the 9th bit first.  This assumes that the uart is
+	    // in {UART_LCR_PARITY_F_0} mode:
+	    if ((bus_uart->LSR & UART_LSR_PE) != 0) {
+		frame |= 0x100;
+	    }
+	    // Read the remaining 8 bits next:
+	    frame |= bus_uart->RBR & UART_RBR_MASKBIT;
+
+	    // Output charcter in front of recevied character:
+	    if ((frame & 0x100) != 0) {
+		index = 0;
+		Serial__character_put(console, '\n');
+	    } else if (index >= 16) {
+		index = 0;
+		Serial__character_put(console, '\n');
+		Serial__character_put(console, ' ');
+	    } else {
+		index += 1;
+		Serial__character_put(console, ' ');
+	    }
+
+	    // Output {frame} to {console} as a hex value:
+	    Serial__hex_put(console, (Integer)frame);
+	}
+    }
 
     if (1) {
 	while (1) {
