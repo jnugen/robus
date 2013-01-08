@@ -1,4 +1,4 @@
-ARM_TOOLS_ROOT := /home/wayne/download/codesourcery/arm-2010q1
+#ARM_TOOLS_ROOT := /home/wayne/download/codesourcery/arm-2010q1
 ARM_TOOLS_BIN := $(ARM_TOOLS_ROOT)/bin
 CC := $(ARM_TOOLS_BIN)/arm-none-eabi-gcc
 AS := $(ARM_TOOLS_BIN)/arm-none-eabi-as
