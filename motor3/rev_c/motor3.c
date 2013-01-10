@@ -38,41 +38,27 @@ typedef Short Frame;
 
 // Typedefs for serial and robus UART's:
 typedef struct Buffer__Struct *Buffer;
-typedef struct Serial__Struct *Serial;
-typedef enum Serial__Mode Serial_Mode;
+typedef struct Motor3__Struct *Motor3;
 typedef struct Ring_Buffer__Struct *Ring_Buffer;
 typedef struct Robus__Struct *Robus;
+typedef enum Serial__Mode Serial_Mode;
+typedef struct Serial__Struct *Serial;
 typedef LPC_UART_TypeDef *Uart;
 typedef LPC_UART1_TypeDef *Uart1;
-typedef struct Discovery__Struct *Discovery;
 
 #define BUFFER_SIZE 32
 #define BUFFER_MASK (BUFFER_SIZE - 1)
 
 struct Buffer__Struct {
-    UByte ubytes[BUFFER_SIZE];
-    UByte get_index;
-    UByte put_index;
-    UByte count;
+    UByte count;		// Number of bytes in {ubytes}
+    UByte get_index;		// Index to get next byte from
+    UByte put_index;		// Index to put next byte to
+    UByte save_count;		// Total number of bytes for saved location
+    UByte save_index;		// Get index for saved location
+    UByte ubytes[BUFFER_SIZE];	// Buffer of bytes
 } Buffer__get_buffer_struct, Buffer__put_buffer_struct;
 Buffer Buffer__get_buffer = &Buffer__get_buffer_struct;
 Buffer Buffer__put_buffer = &Buffer__put_buffer_struct;
-
-#define DISCOVERY_READ_ONLY_BITS (6 * 8 + 1)
-#define DISCOVERY_READ_WRITE_BITS (8 - 1)
-#define DISCOVERY_TOTAL_BITS \
-  (DISCOVERY_READ_ONLY_BITS + DISCOVERY_READ_WRITE_BITS)
-#define DISCOVERY_LOW_ADDRESS_START 0
-#define DISCOVERY_HIGH_ADDRESS_START 0x80
-struct Discovery__Struct {
-    UByte low_address;		// Next low address to allocate
-    UByte high_address;		// Next high address to allocate
-    Logical stack[DISCOVERY_TOTAL_BITS]; // Stack to work with
-    Integer top;		// Current valid top bit in stack
-    Uart uart_8bit;		// 8-bit UART (up stream)
-    Uart uart_9bit;		// 9-bit UART (for bus)
-} Discovery__one_and_only__struct;
-Discovery Discovery__one_and_only = &Discovery__one_and_only__struct;
 
 #define TRACE_BITS 7
 #define TRACE_SIZE (1 << TRACE_BITS)
@@ -80,6 +66,11 @@ Discovery Discovery__one_and_only = &Discovery__one_and_only__struct;
 UShort trace_buffer[TRACE_SIZE];
 UShort trace_index = 0;
 #define TRACE(byte) trace_buffer[trace_index++ & TRACE_MASK] = byte
+
+struct Motor3__Struct {
+    Byte speed;			// Signed motor speed
+    Logical direction_invert;	// Invert motor speed sign
+};
 
 // A Ring Buffer:
 #define RING_BUFFER__SIZE 32
@@ -99,7 +90,7 @@ struct Robus__Struct {
     Serial debug_serial;	// Debugging serial
     Buffer get_buffer;		// Buffer of received bytes
     Buffer put_buffer;		// Buffer of bytes to send
-    Uart uart;			// UART for data sending
+    Uart1 uart1;		// UART for data sending
 } Robus___null_struct;
 Robus Robus__null = &Robus___null_struct;
 
@@ -126,21 +117,22 @@ UByte command_id_byte_show(Serial serial, Robus robus);
 //void command_parse_navigate(Serial serial, Motor2 motor2, Shaft2 shaft2);
 
 // {Buffer} routines:
+UByte Buffer__checksum(Buffer buffer, UByte count);
+UByte Buffer__remaining(Buffer buffer);
+void Buffer__save_restore(Buffer buffer);
+void Buffer__save_end_set(Buffer buffer);
+void Buffer__save_start_set(Buffer buffer);
+void Buffer__reset(Buffer buffer);
 void Buffer__ubyte_put(Buffer buffer, UByte ubyte);
 UByte Buffer__ubyte_get(Buffer buffer);
-UByte Buffer__checksum(Buffer buffer, UByte count);
-void Buffer__reset(Buffer buffer);
-
-// {Discovery} routines:
-void Discovery__byte_send(Discovery discovery, UByte ubyte);
-void Discovery__hex_send(Discovery discovery, UByte uart_8bit);
-void Discovery__initialize(Discovery discovery, Uart uart8_bit, Uart uart9_bit);
-void Discovery__scan(Discovery discovery);
-void Discovery__stack_send(Discovery discovery, UByte *stack);
 
 // {Logical} stuff:
 const Logical Logical__true = (Logical)1;
 const Logical Logical__false = (Logical)0;
+
+// {Motor3} routines:
+UByte Motor3__process(void *motor3__pointer,
+   Robus robus, UByte command, Logical execute);
 
 // {Serial} routines:
 UByte Serial__character_get(Serial serial);
@@ -184,6 +176,8 @@ void Robus__request_begin(Robus robus, UByte address, UByte command);
 void Robus__request_ubyte_put(Robus robus, UByte ubyte);
 void Robus__request_flush(Robus robus);
 void Robus__request_end(Robus robus);
+void Robus__slave_process(Robus robus,
+  UByte (*process_routine)(void *, Robus, UByte, Logical), void *object);
 
 UByte Robus__byte_get(Robus robus);
 void Robus__byte_put(Robus robus, UByte byte);
@@ -202,8 +196,8 @@ void SysTick_delay(unsigned long tick);
 void SysTick_Handler(void);
 
 // {Uart} routines:
-void Uart__frame_put(Uart uart, UShort frame);
-UShort Uart__frame_get(Uart uart);
+void Uart__frame_put(Uart1 uart1, UShort frame);
+UShort Uart__frame_get(Uart1 uart1);
 
 // Devfine all four UART interrupt handlers regardless of whether
 // or not they actually get implemented:
@@ -242,77 +236,31 @@ Integer c_entry(void)
     //  (Uart)LPC_UART3, 115200, 2, 0, 0, 1, UART3_IRQn, 0x04);
     //Serial__string_put(debug, "debug:\n");
 
+    UByte slave_address = 133;
     Robus robus = Robus__null;
     Robus__initialize(robus,
-      console, Buffer__get_buffer, Buffer__put_buffer, 131);
-    Uart uart_9bit = robus->uart;
-    Uart1 uart1 = (Uart1)uart_9bit;
+      console, Buffer__get_buffer, Buffer__put_buffer, slave_address);
+    Uart1 uart1 = robus->uart1;
 
-    uart_9bit->LCR |= UART_LCR_PARITY_EN;
+    uart1->LCR |= UART_LCR_PARITY_EN;
     Serial__string_put(console, "Motor3:");
-    Serial__hex_put(console, uart_9bit->LCR);
+    Serial__hex_put(console, uart1->LCR);
     Serial__character_put(console, ';');
     Serial__hex_put(console, uart1->RS485CTRL);
     Serial__character_put(console, '\n');
 
-    uint8_t new_line_request = 0;
-    while (1) {
-	// Check that there is a a frame available on the 9-bit UART.
-	// Read the LSR (Line Status Register) just once because reading
-	// LSR clears all the error bits:
-	UInteger lsr = uart_9bit->LSR;
-	if ((lsr & UART_LSR_RDR) != 0) {
-	    // Let's assemble the 9-bit frame:
-	    Frame frame = (Frame)0;
-	    if ((lsr & UART_LSR_PE) != 0) {
-		frame |= (Frame)0x100;
-		new_line_request = 1;
-	    }
-	    frame |= (Frame)(uart_9bit->RBR & UART_RBR_MASKBIT);
+    struct Motor3__Struct motor3__struct;
+    Motor3 motor3 = &motor3__struct;
+    motor3->speed = 0;
+    motor3->direction_invert = (Logical)0;
 
-	    // If requested, precede the the frame by a new-line:
-	    if (new_line_request) {
-		new_line_request = 0;
-		Serial__character_put(console, '\n');
-	    } else {
-		Serial__character_put(console, ' ');
-	    }
-
-	    // Output {frame} in hex:
-	    Serial__hex_put(console, frame);
-
-	    // If there is nothing left to read, request a new line next time
-	    // around:
-	    if ((uart_9bit->LSR & UART_LSR_RDR) == 0) {
-		new_line_request = 1;
-	    }
-	}
-    }
+    Robus__slave_process(robus, Motor3__process, (void *)motor3);
 
     // We never get here:
     return 1;
 }
 
 // {Buffer} routines:
-
-UByte Buffer__ubyte_get(
-  Buffer buffer)
-{
-    // This routine will return the next byte from {buffer}:
-
-    buffer->count--;
-    return buffer->ubytes[buffer->get_index++ & BUFFER_MASK];
-}
-
-void Buffer__ubyte_put(
-  Buffer buffer,
-  UByte ubyte)
-{
-    // This routine will enter {byte} into buffer:
-
-    buffer->count++;
-    buffer->ubytes[buffer->put_index++ & BUFFER_MASK] = ubyte;
-}
 
 UByte Buffer__checksum(
   Buffer buffer,
@@ -340,8 +288,125 @@ void Buffer__reset(
     buffer->count = 0;
     buffer->get_index = 0;
     buffer->put_index = 0;
+    buffer->save_count = 0;
+    buffer->save_index = 0;
 }
 
+UByte Buffer__remaining(
+  Buffer buffer)
+{
+    // This routine will return the number of remaining bytes in {buffer}.
+
+    return buffer->count;
+}
+
+void Buffer__save_restore(
+  Buffer buffer)
+{
+    // This routine will restore {buffer} to the saved "get location".
+
+    buffer->count = buffer->save_count;
+    buffer->get_index = buffer->save_index;
+}
+
+void Buffer__save_end_set(
+  Buffer buffer)
+{
+    // This routine will save the current "get location" for {buffer}.
+
+    buffer->save_count = buffer->count;
+}
+
+void Buffer__save_start_set(
+  Buffer buffer)
+{
+    // This routine will save the current "get location" for {buffer}.
+
+    buffer->save_index = buffer->get_index;
+}
+
+UByte Buffer__ubyte_get(
+  Buffer buffer)
+{
+    // This routine will return the next byte from {buffer}:
+
+    buffer->count--;
+    return buffer->ubytes[buffer->get_index++ & BUFFER_MASK];
+}
+
+void Buffer__ubyte_put(
+  Buffer buffer,
+  UByte ubyte)
+{
+    // This routine will enter {byte} into buffer:
+
+    buffer->count++;
+    buffer->ubytes[buffer->put_index++ & BUFFER_MASK] = ubyte;
+}
+
+// {Motor3} routines:
+
+UByte Motor3__process(
+  void *motor3_pointer,
+  Robus robus,
+  UByte command,
+  Logical execute)
+{
+    UByte errors = 0;
+    Motor3 motor3 = (Motor3)motor3_pointer;
+    Buffer get_buffer = robus->get_buffer;
+    Buffer put_buffer = robus->put_buffer;
+    UByte remaining = Buffer__remaining(get_buffer);
+    //Serial debug_serial = robus->debug_serial;
+
+    switch (command) {
+      case 0:
+	// Speed get:
+	if (execute) {
+	    Buffer__ubyte_put(put_buffer, (UByte)motor3->speed);
+	}
+	break;
+      case 1:
+	// Speed set:
+	if (remaining == 0) {
+	    errors = 1;
+	} else {
+	    Byte speed = (Byte)Buffer__ubyte_get(get_buffer);
+	    if (execute) {
+		motor3->speed = speed;
+	    }
+	}
+	break;
+      case 2:
+	// Direction Invert get:
+	if (execute) {
+	    Buffer__ubyte_put(put_buffer, (UByte)motor3->direction_invert);
+	}
+	break;
+      case 3:
+	// Direction Invert set:
+	if (remaining == 0) {
+	    errors = 1;
+	} else {
+	    Logical direction_invert =
+	      (Logical)(Buffer__ubyte_get(get_buffer) != 0);
+	    if (execute) {
+		motor3->direction_invert = direction_invert;
+	    }
+	}
+	break;
+      default:
+	errors = 1;
+	break;
+    }
+
+    //Serial__character_put(debug_serial, 'T');
+    //Serial__hex_put(debug_serial, motor3->speed);
+    //Serial__character_put(debug_serial, 'V');
+    //Serial__hex_put(debug_serial, motor3->direction_invert);
+
+    return errors;
+}
 
 // {Ring_Buffer} routines:
 
@@ -407,7 +472,7 @@ void Robus__byte_put(
 
     // Send {byte} to {robus}:
     buffer[0] = byte;
-    (void)UART_RS485SendData((LPC_UART1_TypeDef *)robus->uart, buffer, 1);
+    (void)UART_RS485SendData(robus->uart1, buffer, 1);
 
     TRACE(byte | 0x200);
 
@@ -433,7 +498,7 @@ UByte Robus__byte_get(
     byte = 0x5a;
     for (tries = 0; tries < 20; tries++) {
 	// See if anything has come in yet:
-	count = UART_Receive(robus->uart, buffer, 1, NONE_BLOCKING);
+	count = UART_Receive((Uart)robus->uart1, buffer, 1, NONE_BLOCKING);
 	//count = UARTReceive(robus->uart, buffer, 1);
 	if (count == 1) {
 	    // We got a byte; return it:
@@ -469,13 +534,13 @@ void Robus__request_begin(
     }
 
     // Send out the new {address}:
-    Uart uart = robus->uart;
-    Uart__frame_put(uart, (Frame)address | (Frame)0x100);
+    Uart1 uart1 = robus->uart1;
+    Uart__frame_put(uart1, (Frame)address | (Frame)0x100);
 
     // If 8th bit of address is 0, an acknowledge byte is requred:
     if ((address & 0x80) == 0) {
 	// Deal with an acknowledge byte:
-	(void)Uart__frame_put(uart, (Frame)0xa5);
+	(void)Uart__frame_put(uart1, (Frame)0xa5);
     }
 
     // Remember how many bytes are ready to be sent:
@@ -502,7 +567,7 @@ void Robus__request_flush(
     UByte commands_length = robus->commands_length;
     Buffer put_buffer = robus->put_buffer;
     Buffer get_buffer = robus->get_buffer;
-    Uart uart = robus->uart;
+    Uart1 uart1 = robus->uart1;
     //Serial debug = robus->serial;
 
     //Serial__string_put(debug, "Flush[");
@@ -519,24 +584,24 @@ void Robus__request_flush(
 	// Output the request packet header:
 	UByte checksum = Buffer__checksum(put_buffer, commands_length);
 	UByte request_header = (commands_length << 4) | checksum;
-	Uart__frame_put(uart, (UShort)request_header);
+	Uart__frame_put(uart1, (UShort)request_header);
 
 	// Output the request packet data:
 	UByte index;
 	for (index = 0; index < commands_length; index++) {
 	    UByte ubyte = Buffer__ubyte_get(put_buffer);
-	    Uart__frame_put(uart, (UShort)ubyte);
+	    Uart__frame_put(uart1, (UShort)ubyte);
 	}
 	put_buffer_count -= commands_length;
 
 	// Wait for the response packet header:
-	UByte response_header = (Byte)Uart__frame_get(uart);
+	UByte response_header = (Byte)Uart__frame_get(uart1);
 	UByte response_length = response_header >> 4;
 
 	// Read in the response packet data:
 	checksum = 0;
 	for (index = 0; index < response_length; index++) {
-	    UByte ubyte = (Byte)Uart__frame_get(uart);
+	    UByte ubyte = (Byte)Uart__frame_get(uart1);
 	    checksum += ubyte;
 	    Buffer__ubyte_put(get_buffer, ubyte);
 	}
@@ -617,15 +682,15 @@ void Robus__initialize(
     // This routine will initialize {robus} data structure and stuff
     // {serial} into it.  The UART connect to the {robus}.
 
-    LPC_UART_TypeDef *uart;
-
     // Robus is connected to UART1:
-    uart = (LPC_UART_TypeDef *)LPC_UART1;
+    Uart1 uart1 = LPC_UART1;
+    Uart uart = (Uart)uart1;
     robus->address = 0xff;
     robus->debug_serial = debug_serial;
-    robus->uart = uart;
+    robus->uart1 = uart1;
     robus->get_buffer = get_buffer;
     robus->put_buffer = put_buffer;
+    robus->address = slave_address;
 
     Buffer__reset(get_buffer);
     Buffer__reset(put_buffer);
@@ -654,10 +719,230 @@ void Robus__initialize(
     UART_TxCmd(uart, ENABLE);
 
     // Enble UART1 to Receive:
-    UART_RS485ReceiverCmd((LPC_UART1_TypeDef *)uart, ENABLE);
+    UART_RS485ReceiverCmd(uart1, ENABLE);
 
     // Flush any garbage that came in:
     //Robus__quiesce(robus);
+}
+
+void Robus__slave_process(
+  Robus robus,
+  UByte (*process_routine)(void *, Robus, UByte, Logical),
+  void *object)
+{
+    //UByte transmit_buffer[16];
+
+    UByte address = robus->address;
+    Logical address_match = (Logical)0;
+    Serial debug_serial = robus->debug_serial;
+    UByte echo_suppress = 0;
+    Buffer get_buffer = robus->get_buffer;
+    Buffer put_buffer = robus->put_buffer;
+    const Logical trace = (Logical)0;
+    Uart1 uart1 = robus->uart1;
+    Integer receive_length = -1;
+    UByte desired_checksum = 0;
+
+    while (1) {
+	// Check that there is a data available in {uart1}.  Stash the LSR
+	// (Line Status Register) into a local variable because reading
+	// the LSR clears all of the error bits:
+	UInteger lsr = uart1->LSR;
+	if ((lsr & UART_LSR_RDR) != 0) {
+	    Frame frame = (Frame)0;
+
+	    // A parity error indicates that we have the 9th address bit set:
+	    if ((lsr & UART_LSR_PE) != 0) {
+	        // We have an address frame:
+		frame |= (Frame)0x100;
+
+		// Any residual bytes in the receive buffer get flused out
+		// when we get an address frame:
+		Buffer__reset(get_buffer);
+		receive_length = -1;
+	    }
+
+	    // Grab the remaining 8 bits of data:
+	    frame |= (Frame)(uart1->RBR & UART_RBR_MASKBIT);
+
+	    // For debugging, output the received character:
+	    if (trace) {
+		// With a new frame; start on a new line:
+		Character prefix = ' ';
+	        if ((frame & 0x100) != 0) {
+		    prefix = '\n';
+	        }
+
+		// Output {frame} in hex:
+	        Serial__character_put(debug_serial, prefix);
+		Serial__string_put(debug_serial, " G");
+		Serial__hex_put(debug_serial, frame);
+	    }
+
+	    // Process the received frame:
+	    if ((frame & 0x100) != 0) {
+	        // Deal with address.  In address match mode, the address
+	        // will always match.
+	        address_match =
+		  (Logical)((UByte)(frame & 0xff) == address);
+		Buffer__reset(get_buffer);
+		echo_suppress = 0;
+
+		if (trace) {
+		    Serial__character_put(debug_serial,
+		      address_match ? 'M' : 'U');
+		    Serial__hex_put(debug_serial, address);
+		}
+	    } else if (address_match) {
+		// Deal with frame:
+		if (echo_suppress != 0) {
+		    // Suppress echo of transmitted byte:
+		    echo_suppress -= 1;
+		    if (trace) {
+			Serial__character_put(debug_serial, '@');
+		    }
+		} else {
+		    // We have a byte to put into the receive buffer:
+		    UByte receive_byte = (UByte)(frame & 0xff);
+		    if (receive_length < 0) {
+			// Have a byte that contains length and checksum:
+			receive_length = receive_byte >> 4;
+			desired_checksum = receive_byte & 0xf;
+			Buffer__save_start_set(get_buffer);
+
+			if (trace) {
+			    Serial__character_put(debug_serial, 'R');
+			    Serial__hex_put(debug_serial, receive_byte);
+			}
+		    } else  {
+		        // Have a byte that that needs to be saved:
+			Buffer__ubyte_put(get_buffer, receive_byte);
+
+			if (trace) {
+			    Serial__character_put(debug_serial, 'X');
+			    Serial__hex_put(debug_serial,
+			      Buffer__remaining(get_buffer));
+			}
+
+			// Do we have a complete message?:
+			if (Buffer__remaining(get_buffer) >= receive_length) {
+			    // We have a complete message:
+			    Buffer__save_end_set(get_buffer);
+
+			    UByte actual_checksum =
+			      Buffer__checksum(get_buffer, receive_length);
+			    if (desired_checksum != actual_checksum) {
+				// Checksum error; respond with error byte:
+				Uart__frame_put(uart1, 0x1);
+				if (trace) {
+				    Serial__character_put(debug_serial, '!');
+				}
+			    } else {
+				// The checksums match, process the commands:
+				UByte errors = 0;
+				UByte pass;
+				Buffer__reset(put_buffer);
+
+				// Pass through the buffer twice.  The first
+				// pass verifies that all the commands are
+				// correct; The second pass actuall executes
+				// the commands:
+				for (pass = 0; pass < 2; pass++) {
+				    if (trace) {
+					Serial__character_put(debug_serial,
+					  '^');
+					Serial__hex_put(debug_serial,
+					  Buffer__remaining(get_buffer));
+				    }
+
+				    Buffer__save_restore(get_buffer);
+				    Logical execute = (Logical)(pass == 1);
+
+				    // Keep processing commands until done:
+				    while (Buffer__remaining(get_buffer) != 0) {
+					UByte command =
+					   Buffer__ubyte_get(get_buffer);
+					errors += process_routine(object,
+					  robus, command, execute);
+					if (trace) {
+					    Serial__character_put(debug_serial,
+					     'C');
+					    Serial__hex_put(debug_serial,
+					      command);
+					}
+				    }
+
+				    // Clear out {get_buffer}:
+				    if (errors != 0) {
+				         break;
+				    }
+				}
+
+				// Send back a response:
+				if (errors == 0) {
+				    // No errors, send the result back:
+
+				    // Compute and send header byte:
+				    UByte send_size =
+				      Buffer__remaining(put_buffer);
+				    UByte send_checksum =
+				      Buffer__checksum(put_buffer, send_size);
+				    UByte header_byte =
+				      (send_size << 4) | send_checksum;
+				    Uart__frame_put(uart1, header_byte);
+				    echo_suppress = 1;
+
+				    if (trace) {
+					Serial__character_put(debug_serial,
+					  'H');
+					Serial__hex_put(debug_serial,
+					  header_byte);
+				    }
+
+				    // Send rest of results:
+				    echo_suppress += send_size;
+				    UByte index;
+				    for (index = 0;
+				      index < send_size; index++) {
+					UByte ubyte = 
+					  Buffer__ubyte_get(put_buffer);
+				        Uart__frame_put(uart1, ubyte);
+
+					if (trace) {
+					    Serial__character_put(debug_serial,
+					     'I');
+					    Serial__hex_put(debug_serial,
+					      index);
+					    Serial__character_put(debug_serial,
+					      'P');
+					    Serial__hex_put(debug_serial,
+					      ubyte);
+					}
+				    }
+				} else {
+				    // There is an error; send an error result:
+				    echo_suppress = 1;
+				    Uart__frame_put(uart1, 0x3);
+
+				    if (trace) {
+					Serial__character_put(debug_serial,
+					  '$');
+				    }
+				}
+
+				// No matter what, reset both buffers:
+				Buffer__reset(get_buffer);
+				Buffer__reset(put_buffer);
+
+				// Mark that for next message block:
+				receive_length = -1;
+			    }  // checksums match
+			} // We have a complete message:
+		    }
+		} // Deal with frame
+	    } // else data byte must be for a different module:
+	}
+    }
 }
 
 UByte Robus__ubyte_get(
@@ -1034,7 +1319,7 @@ Serial Serial__initialize(
 	rs485_config.DirCtrlPin = UART1_RS485_DIRCTRL_DTR;
 	rs485_config.DirCtrlPol_Level = SET;
 	rs485_config.DelayValue = 0;
-	if (1) {
+	if (0) {
 	    // Recieve everything on bus:
 	    rs485_config.NormalMultiDropMode_State = DISABLE;
 	    rs485_config.AutoAddrDetect_State = DISABLE;
@@ -1456,7 +1741,7 @@ void UART3_IRQHandler(void)
 }
 
 void Uart__frame_put(
-  Uart uart,
+  Uart1 uart1,
   UShort frame)
 {
     // This routine will send {frame} to the to {uart}.
@@ -1466,20 +1751,20 @@ void Uart__frame_put(
     // Send {byte} to {robus}:
     if ((frame & 0x100) != 0) {
 	// Set 9th bit here:
-	(void)UART_RS485SendSlvAddr((LPC_UART1_TypeDef *)uart, frame);
+	(void)UART_RS485SendSlvAddr(uart1, frame);
     } else {
 	buffer[0] = (UByte)frame;
-	(void)UART_RS485SendData((LPC_UART1_TypeDef *)uart, buffer, 1);
+	(void)UART_RS485SendData(uart1, buffer, 1);
     }
 
     TRACE(frame | 0x200);
 
     // Read the echo back from {robus}:
-    (void)Uart__frame_get(uart);
+    //(void)Uart__frame_get(uart1);
 }
 
 UShort Uart__frame_get(
-  Uart uart)
+  Uart1 uart1)
 {
     // This routine will get one byte of response Robus bus attached to {robus}.
     // If no byte is found after a resonable amount of time, 0x5a is returned
@@ -1494,7 +1779,7 @@ UShort Uart__frame_get(
     frame = 0x5a;
     for (tries = 0; tries < 20; tries++) {
 	// See if anything has come in yet:
-	count = UART_Receive(uart, buffer, 1, NONE_BLOCKING);
+	count = UART_Receive((Uart)uart1, buffer, 1, NONE_BLOCKING);
 	//count = UARTReceive(robus->uart, buffer, 1);
 	if (count == 1) {
 	    // We got a byte; return it:
