@@ -3,20 +3,8 @@
 #include "lpc17xx_uart.h"
 #include "lpc17xx_libcfg.h"
 #include "lpc17xx_pinsel.h"
-
-// Note: Including <math.h> triggers an include file error on line 490 of:
-//
-//  .../codesourcery/arm-2010q1/arm-none-eabi/include/sys/reent.h
-//
-// #if DEBUG
-//
-// should be
-// 
-//   #if 0
-//
-// This problem was fixed by editing <math.h>.
-
-#include <math.h>
+#include "motor.h"
+#include "pwm.h"
 
 // Types start with first letter capitalized:
 
@@ -131,6 +119,7 @@ const Logical Logical__true = (Logical)1;
 const Logical Logical__false = (Logical)0;
 
 // {Motor3} routines:
+void Motor3__speed_update(Motor3 motor3, Serial debug_serial);
 UByte Motor3__process(void *motor3__pointer,
    Robus robus, UByte command, Logical execute);
 
@@ -254,6 +243,9 @@ Integer c_entry(void)
     motor3->speed = 0;
     motor3->direction_invert = (Logical)0;
 
+    motor_init();
+    pwm_init();
+
     Robus__slave_process(robus, Motor3__process, (void *)motor3);
 
     // We never get here:
@@ -346,6 +338,44 @@ void Buffer__ubyte_put(
 
 // {Motor3} routines:
 
+void Motor3__speed_update(
+  Motor3 motor3,
+  Serial debug_serial)
+{
+    Byte speed = motor3->speed;
+    Logical direction_invert = motor3->direction_invert;
+
+    Integer pwm = 0;
+    if (debug_serial != (Serial)0) {
+	Serial__character_put(debug_serial, ' ');
+	Serial__character_put(debug_serial, 'S');
+	Serial__hex_byte_put(debug_serial, speed);
+	Serial__character_put(debug_serial, 'D');
+	Serial__hex_put(debug_serial, direction_invert);
+    }
+
+    if (direction_invert) {
+	speed = -speed;
+    }
+
+    if (speed > 0) {
+	motor_forward();
+	pwm = (Integer)(speed << 1);
+    } else if (speed < 0) {
+	motor_reverse();
+        pwm = (Integer)((-speed) << 1);
+    } else {
+	motor_stop();
+    }
+
+    if (debug_serial != (Serial)0) {
+	Serial__character_put(debug_serial, 'P');
+	Serial__hex_put(debug_serial, pwm);
+    }
+
+    pwm_update(pwm);
+}
+
 UByte Motor3__process(
   void *motor3_pointer,
   Robus robus,
@@ -357,7 +387,8 @@ UByte Motor3__process(
     Buffer get_buffer = robus->get_buffer;
     Buffer put_buffer = robus->put_buffer;
     UByte remaining = Buffer__remaining(get_buffer);
-    //Serial debug_serial = robus->debug_serial;
+    Serial debug_serial = robus->debug_serial;
+    debug_serial = (Serial)0;
 
     switch (command) {
       case 0:
@@ -374,6 +405,7 @@ UByte Motor3__process(
 	    Byte speed = (Byte)Buffer__ubyte_get(get_buffer);
 	    if (execute) {
 		motor3->speed = speed;
+		Motor3__speed_update(motor3, debug_serial);
 	    }
 	}
 	break;
@@ -392,6 +424,7 @@ UByte Motor3__process(
 	      (Logical)(Buffer__ubyte_get(get_buffer) != 0);
 	    if (execute) {
 		motor3->direction_invert = direction_invert;
+		Motor3__speed_update(motor3, debug_serial);
 	    }
 	}
 	break;

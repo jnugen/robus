@@ -4,6 +4,7 @@ AS := $(ARM_TOOLS_BIN)/arm-none-eabi-as
 OBJCOPY := $(ARM_TOOLS_BIN)/arm-none-eabi-objcopy
 SIZE := $(ARM_TOOLS_BIN)/arm-none-eabi-size
 CMSIS := ../../cmsis_1.30
+COMMON := ../../common
 
 INCLUDES := \
     -I$(CMSIS)/Drivers/include \
@@ -44,9 +45,12 @@ CMSIS_OBJECTS := \
     lpc17xx_gpio.o \
     lpc17xx_nvic.o \
     lpc17xx_pinsel.o \
+    lpc17xx_pwm.o \
     lpc17xx_uart.o
 OBJECTS := \
     motor3.o \
+    motor.o \
+    pwm.o \
     ${CMSIS_OBJECTS}
 LINK_FLAGS := \
     -static \
@@ -64,6 +68,8 @@ LINK_FLAGS := \
 
 all:
 	$(CC) -c ${CFLAGS} ${INCLUDES} motor3.c -o motor3.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} motor.c -o motor.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} pwm.c -o pwm.o
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/CoreSupport/core_cm3.c -o core_cm3.o
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/system_LPC17xx.c -o system_LPC17xx.o
 	$(AS) ${AS_FLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/startup/gcc/startup_LPC17xx.s -o startup_LPC17xx.o
@@ -71,6 +77,7 @@ all:
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_gpio.c -o lpc17xx_gpio.o
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_nvic.c -o lpc17xx_nvic.o
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_pinsel.c -o lpc17xx_pinsel.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_pwm.c -o lpc17xx_pwm.o
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_uart.c -o lpc17xx_uart.o
 	$(CC) ${OBJECTS} ${LINK_FLAGS} -o motor3.elf
 	$(OBJCOPY) -O ihex  motor3.elf motor3.hex
