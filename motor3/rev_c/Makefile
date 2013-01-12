@@ -66,20 +66,48 @@ LINK_FLAGS := \
     -Xlinker motor3.map \
     -Xlinker -T ldscript_rom_gnu.ld
 
-all:
-	$(CC) -c ${CFLAGS} ${INCLUDES} motor3.c -o motor3.o
-	$(CC) -c ${CFLAGS} ${INCLUDES} motor.c -o motor.o
-	$(CC) -c ${CFLAGS} ${INCLUDES} pwm.c -o pwm.o
+all: motor3.hex
+
+core_cm3.o: $(CMSIS)/Core/CM3/CoreSupport/core_cm3.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/CoreSupport/core_cm3.c -o core_cm3.o
+
+system_LPC17xx.o: $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/system_LPC17xx.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/system_LPC17xx.c -o system_LPC17xx.o
+
+startup_LPC17xx.o: $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/startup/gcc/startup_LPC17xx.s
 	$(AS) ${AS_FLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/startup/gcc/startup_LPC17xx.s -o startup_LPC17xx.o
+
+lpc17xx_clkpwr.o: $(CMSIS)/Drivers/source/lpc17xx_clkpwr.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_clkpwr.c -o lpc17xx_clkpwr.o
+
+lpc17xx_gpio.o: $(CMSIS)/Drivers/source/lpc17xx_gpio.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_gpio.c -o lpc17xx_gpio.o
+
+lpc17xx_nvic.o: $(CMSIS)/Drivers/source/lpc17xx_nvic.c 
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_nvic.c -o lpc17xx_nvic.o
+
+lpc17xx_pinsel.o: $(CMSIS)/Drivers/source/lpc17xx_pinsel.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_pinsel.c -o lpc17xx_pinsel.o
+
+lpc17xx_pwm.o: $(CMSIS)/Drivers/source/lpc17xx_pwm.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_pwm.c -o lpc17xx_pwm.o
+
+lpc17xx_uart.o: $(CMSIS)/Drivers/source/lpc17xx_uart.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_uart.c -o lpc17xx_uart.o
+
+motor3.o: motor3.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} motor3.c -o motor3.o
+
+motor.o: motor.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} motor.c -o motor.o
+
+pwm.o: pwm.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} pwm.c -o pwm.o
+
+motor3.elf: ${OBJECTS}
 	$(CC) ${OBJECTS} ${LINK_FLAGS} -o motor3.elf
+
+motor3.hex: motor3.elf
 	$(OBJCOPY) -O ihex  motor3.elf motor3.hex
 	$(SIZE) motor3.elf motor3.elf motor3.hex
 
