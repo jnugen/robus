@@ -24,6 +24,8 @@ Integer main(void)
 
 Integer c_entry(void)
 {
+    SystemCoreClockUpdate();
+
     // Generate interrupt each 1 ms:
     SysTick_Config(SystemCoreClock/1000 - 1);
 
@@ -50,12 +52,13 @@ Integer c_entry(void)
 
     Integer index = 0;
     while (1) {
-	if ((bus_uart->LSR & UART_LSR_RDR) != 0) {
+        uint32_t lsr = bus_uart->LSR;
+	if ((lsr & UART_LSR_RDR) != 0) {
 	    // Read the 9-bit {frame} from {bus_uart}:
 	    Frame frame = (Frame)0;
 	    // Grab the 9th bit first.  This assumes that the uart is
 	    // in {UART_LCR_PARITY_F_0} mode:
-	    if ((bus_uart->LSR & UART_LSR_PE) != 0) {
+	    if ((lsr & UART_LSR_PE) != 0) {
 		frame |= 0x100;
 	    }
 	    // Read the remaining 8 bits next:
