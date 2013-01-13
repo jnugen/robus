@@ -3,19 +3,12 @@ CC := $(ARM_TOOLS_BIN)/arm-none-eabi-gcc
 AS := $(ARM_TOOLS_BIN)/arm-none-eabi-as
 OBJCOPY := $(ARM_TOOLS_BIN)/arm-none-eabi-objcopy
 SIZE := $(ARM_TOOLS_BIN)/arm-none-eabi-size
-CMSIS := ../../cmsis_1.30
 COMMON := ../../common
 
+CMSIS := ../../cmsis
 INCLUDES := \
-    -I$(CMSIS)/Drivers/include \
-    -I$(CMSIS)/Core/CM3/CoreSupport \
-    -I$(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx \
-    -I.
-
-CMSIS_20 := ../../cmsis
-INCLUDES_CMSIS_20 := \
-    -I$(CMSIS_20)/drivers/include \
-    -I$(CMSIS_20)/core/include \
+    -I$(CMSIS)/drivers/include \
+    -I$(CMSIS)/core/include \
     -I.
 
 AS_FLAGS := \
@@ -79,40 +72,33 @@ LINK_FLAGS := \
 
 all: motor3.hex
 
-core_cm3.o: $(CMSIS)/Core/CM3/CoreSupport/core_cm3.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/CoreSupport/core_cm3.c -o core_cm3.o
+core_cm3.o: $(CMSIS)/core/core_cm3.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/core/core_cm3.c -o core_cm3.o
+
+system_LPC17xx.o: $(CMSIS)/core/system_LPC17xx.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/core/system_LPC17xx.c -o system_LPC17xx.o
+
+startup_LPC17xx.o: $(CMSIS)/core/startup_LPC17xx.s
+	$(AS) ${AS_FLAGS} ${INCLUDES} $(CMSIS)/core/startup_LPC17xx.s -o startup_LPC17xx.o
 
 
-system_LPC17xx.o: $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/system_LPC17xx.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/system_LPC17xx.c -o system_LPC17xx.o
+lpc17xx_clkpwr.o: $(CMSIS)/drivers/src/lpc17xx_clkpwr.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_clkpwr.c -o lpc17xx_clkpwr.o
 
-startup_LPC17xx.o: $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/startup/gcc/startup_LPC17xx.s
-	$(AS) ${AS_FLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/startup/gcc/startup_LPC17xx.s -o startup_LPC17xx.o
+lpc17xx_gpio.o: $(CMSIS)/drivers/src/lpc17xx_gpio.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_gpio.c -o lpc17xx_gpio.o
 
+lpc17xx_nvic.o: $(CMSIS)/drivers/src/lpc17xx_nvic.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_nvic.c -o lpc17xx_nvic.o
 
-lpc17xx_clkpwr.o: $(CMSIS_20)/drivers/src/lpc17xx_clkpwr.c
-	$(CC) -c ${CFLAGS} ${INCLUDES_CMSIS_20} $(CMSIS_20)/drivers/src/lpc17xx_clkpwr.c -o lpc17xx_clkpwr.o
+lpc17xx_pinsel.o: $(CMSIS)/drivers/src/lpc17xx_pinsel.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_pinsel.c -o lpc17xx_pinsel.o
 
+lpc17xx_pwm.o: $(CMSIS)/drivers/src/lpc17xx_pwm.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_pwm.c -o lpc17xx_pwm.o
 
-lpc17xx_gpio.o: $(CMSIS_20)/drivers/src/lpc17xx_gpio.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS_20)/drivers/src/lpc17xx_gpio.c -o lpc17xx_gpio.o
-
-
-
-lpc17xx_nvic.o: $(CMSIS_20)/drivers/src/lpc17xx_nvic.c
-	$(CC) -c ${CFLAGS} ${INCLUDES_CMSIS_20} $(CMSIS_20)/drivers/src/lpc17xx_nvic.c -o lpc17xx_nvic.o
-
-lpc17xx_pinsel.o: $(CMSIS_20)/drivers/src/lpc17xx_pinsel.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS_20)/drivers/src/lpc17xx_pinsel.c -o lpc17xx_pinsel.o
-
-
-lpc17xx_pwm.o: $(CMSIS_20)/drivers/src/lpc17xx_pwm.c
-	$(CC) -c ${CFLAGS} ${INCLUDES_CMSIS_20} $(CMSIS_20)/drivers/src/lpc17xx_pwm.c -o lpc17xx_pwm.o
-
-
-lpc17xx_uart.o: $(CMSIS_20)/drivers/src/lpc17xx_uart.c
-	$(CC) -c ${CFLAGS} ${INCLUDES_CMSIS_20} $(CMSIS_20)/drivers/src/lpc17xx_uart.c -o lpc17xx_uart.o
-
+lpc17xx_uart.o: $(CMSIS)/drivers/src/lpc17xx_uart.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_uart.c -o lpc17xx_uart.o
 
 motor3.o: motor3.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} motor3.c -o motor3.o
@@ -135,6 +121,24 @@ clean:
 
 
 ###### OLD stuff to be deleted:
+
+#CMSIS := ../../cmsis_1.30
+#INCLUDES := \
+#    -I$(CMSIS)/Drivers/include \
+#    -I$(CMSIS)/Core/CM3/CoreSupport \
+#    -I$(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx \
+#    -I.
+
+#core_cm3.o: core_cm3_cmsis13.c
+#	$(CC) -c ${CFLAGS} ${INCLUDES} core_cm3_cmsis13.c -o core_cm3.o
+
+#system_LPC17xx.o: system_LPC17xx_cmsis13.c
+#	$(CC) -c ${CFLAGS} ${INCLUDES} system_LPC17xx_cmsis13.c -o system_LPC17xx.o
+
+#startup_LPC17xx.o: startup_LPC17xx_cmsis13.s
+#	$(AS) ${AS_FLAGS} ${INCLUDES} startup_LPC17xx_cmsis13.s -o startup_LPC17xx.o
+
+
 #lpc17xx_clkpwr.o: $(CMSIS)/Drivers/source/lpc17xx_clkpwr.c
 #	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_clkpwr.c -o lpc17xx_clkpwr.o
 
