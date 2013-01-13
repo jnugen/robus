@@ -12,6 +12,12 @@ INCLUDES := \
     -I$(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx \
     -I.
 
+CMSIS_20 := ../../cmsis
+INCLUDES_CMSIS_20 := \
+    -I$(CMSIS_20)/drivers/include \
+    -I$(CMSIS_20)/core/include \
+    -I.
+
 AS_FLAGS := \
     -mcpu=cortex-m3 \
     -gdwarf-2 \
@@ -43,10 +49,15 @@ CMSIS_OBJECTS := \
     startup_LPC17xx.o \
     lpc17xx_clkpwr.o \
     lpc17xx_gpio.o \
-    lpc17xx_nvic.o \
     lpc17xx_pinsel.o \
     lpc17xx_pwm.o \
     lpc17xx_uart.o
+
+#    lpc17xx_nvic.o \
+
+LD_SCRIPT := ../../common/ldscript_rom_gnu.ld
+#LD_SCRIPT := ldscript_rom_gnu.ld
+
 OBJECTS := \
     motor3.o \
     motor.o \
@@ -64,12 +75,13 @@ LINK_FLAGS := \
     -Wl,--end-group \
     -Xlinker -Map \
     -Xlinker motor3.map \
-    -Xlinker -T ldscript_rom_gnu.ld
+    -Xlinker -T $(LD_SCRIPT)
 
 all: motor3.hex
 
 core_cm3.o: $(CMSIS)/Core/CM3/CoreSupport/core_cm3.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/CoreSupport/core_cm3.c -o core_cm3.o
+
 
 system_LPC17xx.o: $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/system_LPC17xx.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/system_LPC17xx.c -o system_LPC17xx.o
@@ -77,23 +89,30 @@ system_LPC17xx.o: $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/system_LPC17xx.c
 startup_LPC17xx.o: $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/startup/gcc/startup_LPC17xx.s
 	$(AS) ${AS_FLAGS} ${INCLUDES} $(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx/startup/gcc/startup_LPC17xx.s -o startup_LPC17xx.o
 
-lpc17xx_clkpwr.o: $(CMSIS)/Drivers/source/lpc17xx_clkpwr.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_clkpwr.c -o lpc17xx_clkpwr.o
 
-lpc17xx_gpio.o: $(CMSIS)/Drivers/source/lpc17xx_gpio.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_gpio.c -o lpc17xx_gpio.o
+lpc17xx_clkpwr.o: $(CMSIS_20)/drivers/src/lpc17xx_clkpwr.c
+	$(CC) -c ${CFLAGS} ${INCLUDES_CMSIS_20} $(CMSIS_20)/drivers/src/lpc17xx_clkpwr.c -o lpc17xx_clkpwr.o
 
-lpc17xx_nvic.o: $(CMSIS)/Drivers/source/lpc17xx_nvic.c 
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_nvic.c -o lpc17xx_nvic.o
 
-lpc17xx_pinsel.o: $(CMSIS)/Drivers/source/lpc17xx_pinsel.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_pinsel.c -o lpc17xx_pinsel.o
+lpc17xx_gpio.o: $(CMSIS_20)/drivers/src/lpc17xx_gpio.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS_20)/drivers/src/lpc17xx_gpio.c -o lpc17xx_gpio.o
 
-lpc17xx_pwm.o: $(CMSIS)/Drivers/source/lpc17xx_pwm.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_pwm.c -o lpc17xx_pwm.o
 
-lpc17xx_uart.o: $(CMSIS)/Drivers/source/lpc17xx_uart.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_uart.c -o lpc17xx_uart.o
+
+lpc17xx_nvic.o: $(CMSIS_20)/drivers/src/lpc17xx_nvic.c
+	$(CC) -c ${CFLAGS} ${INCLUDES_CMSIS_20} $(CMSIS_20)/drivers/src/lpc17xx_nvic.c -o lpc17xx_nvic.o
+
+lpc17xx_pinsel.o: $(CMSIS_20)/drivers/src/lpc17xx_pinsel.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS_20)/drivers/src/lpc17xx_pinsel.c -o lpc17xx_pinsel.o
+
+
+lpc17xx_pwm.o: $(CMSIS_20)/drivers/src/lpc17xx_pwm.c
+	$(CC) -c ${CFLAGS} ${INCLUDES_CMSIS_20} $(CMSIS_20)/drivers/src/lpc17xx_pwm.c -o lpc17xx_pwm.o
+
+
+lpc17xx_uart.o: $(CMSIS_20)/drivers/src/lpc17xx_uart.c
+	$(CC) -c ${CFLAGS} ${INCLUDES_CMSIS_20} $(CMSIS_20)/drivers/src/lpc17xx_uart.c -o lpc17xx_uart.o
+
 
 motor3.o: motor3.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} motor3.c -o motor3.o
@@ -113,3 +132,24 @@ motor3.hex: motor3.elf
 
 clean:
 	rm -f ${OBJECTS} motor3.elf motor3.hex motor3.map
+
+
+###### OLD stuff to be deleted:
+#lpc17xx_clkpwr.o: $(CMSIS)/Drivers/source/lpc17xx_clkpwr.c
+#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_clkpwr.c -o lpc17xx_clkpwr.o
+
+#lpc17xx_gpio.o: $(CMSIS)/Drivers/source/lpc17xx_gpio.c
+#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_gpio.c -o lpc17xx_gpio.o
+
+#lpc17xx_nvic.o: $(CMSIS)/Drivers/source/lpc17xx_nvic.c
+#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_nvic.c -o lpc17xx_nvic.o
+
+#lpc17xx_pinsel.o: $(CMSIS)/Drivers/source/lpc17xx_pinsel.c
+#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_pinsel.c -o lpc17xx_pinsel.o
+
+#lpc17xx_pwm.o: $(CMSIS)/Drivers/source/lpc17xx_pwm.c
+#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_pwm.c -o lpc17xx_pwm.o
+
+#lpc17xx_uart.o: $(CMSIS)/Drivers/source/lpc17xx_uart.c
+#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_uart.c -o lpc17xx_uart.o
+
