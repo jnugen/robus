@@ -302,7 +302,8 @@
 #define CLKSRCSEL_Val         0x00000001
 #define PLL0_SETUP            1
 // For some reason the UART1 buad rate does not properly initialize
-// when PLL0CFG_Val is set to 9.  Wayne Gramlich 13Jan2013:
+// when PLL0CFG_Val is set to 7.  It works fine a 9.
+// -- Wayne Gramlich 13Jan2013:
 //#define PLL0CFG_Val           0x00000007
 #define PLL0CFG_Val           0x00000009
 #define PLL1_SETUP            0

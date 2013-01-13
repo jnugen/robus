@@ -210,6 +210,9 @@ Integer main(void)
 // ... but for some reason, we use c_entry instead:
 Integer c_entry(void)
 {
+    // Make sure that global variable SystemCoreClock is correct:
+    SystemCoreClockUpdate();
+
     // Generate interrupt each 1 ms:
     SysTick_Config(SystemCoreClock/1000 - 1);
 
