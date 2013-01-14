@@ -24,6 +24,8 @@ SIZE := $(ARM_TOOLS_BIN)/arm-none-eabi-size
 # CMSIS library locations:
 CMSIS := $(PROJECT_ROOT)/cmsis
 
+COMMON := $(PROJECT_ROOT)/common
+
 # Compiler -I flags:
 INCLUDES := \
     -I$(CMSIS)/drivers/include \

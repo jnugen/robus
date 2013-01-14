@@ -4,26 +4,23 @@ all: $(PROGRAM).hex
 
 # Read the beginning of robus.mk for documentation about robus.mk:
 PROJECT_ROOT := ../..
-include $(PROJECT_ROOT)/common/robus.mk
+include $(PROJECT_ROOT)/common/common.mk
 
 # Define needed object files:
 OBJECT_FILES := \
-    raspi.o \
+    $(PROGRAM).o \
     ${COMMON_OBJECTS} \
-    ${CMSIS_CORE_OBJECTS} \
-    lpc17xx_clkpwr.o \
-    lpc17xx_pinsel.o \
-    lpc17xx_uart.o
+    ${CMSIS_OBJECTS}
 
 $(PROGRAM).hex: $(PROGRAM).elf
 	$(OBJCOPY) -O ihex $(PROGRAM).elf $(PROGRAM).hex
 
 $(PROGRAM).elf: ${OBJECT_FILES}
-	$(CC) ${OBJECT_FILES} ${LD_FLAGS} -o $(PROGRAM).elf
+	$(CC) ${OBJECT_FILES} ${LINK_FLAGS} -o $(PROGRAM).elf
 	$(SIZE) $(PROGRAM).elf
 
 $(PROGRAM).o: $(PROGRAM).c
-	$(CC) -c ${CFLAGS} $(PROGRAM).c -o $(PROGRAM).o
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(PROGRAM).c -o $(PROGRAM).o
 
 clean:
 	rm -f ${OBJECT_FILES}

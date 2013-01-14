@@ -5,9 +5,7 @@ PROGRAM := motor3
 all: $(PROGRAM).hex
 
 PROJECT_ROOT := ../..
-COMMON := $(PROJECT_ROOT)/common
-
-include $(COMMON)/common.mk
+include $(PROJECT_ROOT)/common/common.mk
 
 OBJECTS := \
     $(PROGRAM).o \

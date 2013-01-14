@@ -55,7 +55,7 @@ UByte Robus__byte_get(
 
 	// FIXME!!! Is this necessary???
 	// Wait for a millisecond:
-	SysTick_delay(1);
+	SysTick__delay(1);
     }
 
     // We have timed out; return 0x5a:

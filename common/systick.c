@@ -10,7 +10,7 @@ void SysTick_Handler (void) {
 }
 
 // This routine will delay for {ms} milliseconds.
-void SysTick_delay (
+void SysTick__delay (
   unsigned long ms)
 {
     unsigned long sys_tick_count;

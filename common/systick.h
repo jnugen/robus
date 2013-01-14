@@ -7,7 +7,7 @@
 
 // SysTick routines:
 volatile UInteger SysTickCnt;
-void SysTick_delay(UInteger tick);
+void SysTick__delay(UInteger tick);
 void SysTick_Handler(void);
 
 #endif // SYSTICK_H_INCLUDED

@@ -2,6 +2,11 @@
 
 #include "common.h"
 
+#include "LPC17xx.h"
+#include "lpc17xx_uart.h"
+#include "lpc17xx_libcfg.h"
+#include "lpc17xx_pinsel.h"
+
 // Typedefs for serial and robus UART's:
 typedef struct Discovery__Struct *Discovery;
 
@@ -17,7 +22,7 @@ struct Discovery__Struct {
     Logical stack[DISCOVERY_TOTAL_BITS]; // Stack to work with
     Integer top;		// Current valid top bit in stack
     Uart uart_8bit;		// 8-bit UART (up stream)
-    Uart uart_9bit;		// 9-bit UART (for bus)
+    Uart1 uart_9bit;		// 9-bit UART (for bus)
 };
 
 // {Discovery} routines:
@@ -26,7 +31,8 @@ extern Discovery Discovery__one_and_only;
 
 void Discovery__byte_send(Discovery discovery, UByte ubyte);
 void Discovery__hex_send(Discovery discovery, UByte uart_8bit);
-void Discovery__initialize(Discovery discovery, Uart uart8_bit, Uart uart9_bit);
+void Discovery__initialize(Discovery discovery,
+  Uart uart8_bit, Uart1 uart9_bit);
 void Discovery__scan(Discovery discovery);
 void Discovery__stack_send(Discovery discovery, UByte *stack);
 
@@ -54,6 +60,9 @@ Integer main(void)
 // ... but for some reason, we use c_entry instead:
 Integer c_entry(void)
 {
+    // Make sure that global variable SystemCoreClock is correct:
+    SystemCoreClockUpdate();
+
     // Generate interrupt each 1 ms:
     SysTick_Config(SystemCoreClock/1000 - 1);
 
@@ -62,7 +71,7 @@ Integer c_entry(void)
     Byte interrupt_number = UART0_IRQn;
     interrupt_number = (Byte)-1;	// Disable interrupts
     Serial console = Serial__initialize(&Serial__uart0,
-      (Uart)LPC_UART0, 115200, 1, 0, 2, 3, interrupt_number, 0x01);
+      (Uart)LPC_UART0, 115200, 1, 0, 2, 3, interrupt_number, 0x01, 0);
 
     // Make sure that _UART3 is defined in libcfg.h!:
     //Serial debug = Serial__initialize(&Serial__uart3,
@@ -70,12 +79,13 @@ Integer c_entry(void)
     //Serial__string_put(debug, "debug:\n");
 
     Robus robus = Robus__null;
-    Robus__initialize(robus, console, Buffer__get_buffer, Buffer__put_buffer);
+    Robus__initialize(robus,
+      console, Buffer__get_buffer, Buffer__put_buffer, 0);
 
     //Serial__string_put(console, "Hello\n");
 
     Uart uart_8bit = console->uart;
-    Uart uart_9bit = robus->uart;
+    Uart1 uart_9bit = robus->uart1;
     Frame high_bits = (Frame)-1;
     Frame frame8_out = (Frame)-1;
     Frame frame9_out = (Frame)-1;
@@ -258,7 +268,7 @@ Discovery Discovery__one_and_only = &Discovery__one_and_only__struct;
 void Discovery__initialize(
   Discovery discovery,
   Uart uart_8bit,
-  Uart uart_9bit)
+  Uart1 uart_9bit)
 {
     discovery->low_address = 0;
     discovery->high_address = 0;
@@ -320,4 +330,21 @@ void Discovery__byte_send(
     // Send the byte on its merry way:
     uart_8bit->THR = ubyte & UART_THR_MASKBIT;
 }
+
+#ifdef  DEBUG
+// This routine is called whenever an check macro fails.
+void check_failed(
+  UByte *file,
+  UInteger line)
+{
+    // User can add his own implementation to report the file name and
+    // line number, example:
+    //    printf("Wrong parameters value: file %s on line %d\r\n", file, line);
+
+    // Infinite loop:
+    while (1) {
+	// do nothing
+    }
+}
+#endif
 

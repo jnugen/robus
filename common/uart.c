@@ -77,7 +77,7 @@ UShort Uart__frame_get(
 	}
 
 	// Wait for a millisecond, to give the bus some time:
-	SysTick_delay(1);
+	SysTick__delay(1);
     }
 
     // We have timed out; return 0x5a:
