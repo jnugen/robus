@@ -331,7 +331,8 @@ typedef struct
 
 /*------------- Universal Asynchronous Receiver Transmitter (UART) -----------*/
 /** @brief  Universal Asynchronous Receiver Transmitter (UART) register structure definition */
-typedef struct
+// Added structure name -- Wayne Gramlich 13Jan2013.
+typedef struct LPC_UART__Struct
 {
   union {
   __I  uint8_t  RBR;
@@ -364,7 +365,8 @@ typedef struct
 } LPC_UART_TypeDef;
 
 /** @brief  Universal Asynchronous Receiver Transmitter 0 (UART0) register structure definition */
-typedef struct
+// Added structure name -- Wayne Gramlich 13Jan2013.
+typedef struct LPC_UART0__Struct
 {
   union {
   __I  uint8_t  RBR;
@@ -397,7 +399,8 @@ typedef struct
 } LPC_UART0_TypeDef;
 
 /** @brief  Universal Asynchronous Receiver Transmitter 1 (UART1) register structure definition */
-typedef struct
+// Added structure name -- Wayne Gramlich 13Jan2013.
+typedef struct LPC_UART1__Struct
 {
   union {
   __I  uint8_t  RBR;

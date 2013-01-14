@@ -1,13 +1,12 @@
-// Copyright (c) 2011-2013 by IMC.  All rights reserved.
-
 #ifndef RING_BUFFER_H_INCLUDED
 #define RING_BUFFER_H_INCLUDED 1
 
-// Types start with first letter capitalized:
-
-#include "types.h"
+// Copyright (c) 2011-2013 by IMC.  All rights reserved.
 
 typedef struct Ring_Buffer__Struct *Ring_Buffer;
+
+#include "types.h"
+#include "uart.h"
 
 // A Ring Buffer:
 #define RING_BUFFER__SIZE 32
@@ -16,7 +15,7 @@ typedef struct Ring_Buffer__Struct *Ring_Buffer;
 struct Ring_Buffer__Struct {
     volatile UByte head;			// Ring buffer head index
     volatile UByte tail;			// Ring buffer tail index
-    volatile Frame frames[RING_BUFFER__SIZE]; // Ring buffer frame data
+    volatile Frame frames[RING_BUFFER__SIZE];	// Ring buffer frame data
 };
 
 // {Ring_Buffer} routines:

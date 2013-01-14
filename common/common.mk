@@ -1,14 +1,34 @@
+# Copyright (c) 2013 by IMC.  All rights reserved.
+#
+# This make file fragment is included from another makfile as follows:
+#
+#    PROJECT_ROOT := ../..             # As appropriate
+#    include $(PROJECT_ROOT)/common/common.mk
+#    
+# makefile fragment requires that both $(PROJECT_ROOT) and $(ARM_TOOLS_ROOT)
+# be defined prior being included.  It is expected that $(ARM_TOOLS_ROOT)
+# will be picked via an environment variable that is defined in .bashrc:
+#
+#    export ARM_TOOLS_ROOT = ...
+
+# Various locations in the ARM tools tree:
 ARM_TOOLS_BIN := $(ARM_TOOLS_ROOT)/bin
 CC := $(ARM_TOOLS_BIN)/arm-none-eabi-gcc
 AS := $(ARM_TOOLS_BIN)/arm-none-eabi-as
 OBJCOPY := $(ARM_TOOLS_BIN)/arm-none-eabi-objcopy
 SIZE := $(ARM_TOOLS_BIN)/arm-none-eabi-size
-COMMON := ../../common
 
-CMSIS := ../../cmsis
+# CMSIS is a vendor supplied library of code that can be used
+# to access processor peripherals.
+#
+# CMSIS library locations:
+CMSIS := $(PROJECT_ROOT)/cmsis
+
+# Compiler -I flags:
 INCLUDES := \
     -I$(CMSIS)/drivers/include \
     -I$(CMSIS)/core/include \
+    -I$(COMMON) \
     -I.
 
 AS_FLAGS := \
@@ -48,14 +68,8 @@ CMSIS_OBJECTS := \
 
 #    lpc17xx_nvic.o \
 
-LD_SCRIPT := ../../common/ldscript_rom_gnu.ld
-#LD_SCRIPT := ldscript_rom_gnu.ld
+LD_SCRIPT := $(COMMON)/ldscript_rom_gnu.ld
 
-OBJECTS := \
-    motor3.o \
-    motor.o \
-    pwm.o \
-    ${CMSIS_OBJECTS}
 LINK_FLAGS := \
     -static \
     -mcpu=cortex-m3 \
@@ -69,8 +83,6 @@ LINK_FLAGS := \
     -Xlinker -Map \
     -Xlinker motor3.map \
     -Xlinker -T $(LD_SCRIPT)
-
-all: motor3.hex
 
 core_cm3.o: $(CMSIS)/core/core_cm3.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/core/core_cm3.c -o core_cm3.o
@@ -100,60 +112,4 @@ lpc17xx_pwm.o: $(CMSIS)/drivers/src/lpc17xx_pwm.c
 lpc17xx_uart.o: $(CMSIS)/drivers/src/lpc17xx_uart.c
 	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_uart.c -o lpc17xx_uart.o
 
-motor3.o: motor3.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} motor3.c -o motor3.o
-
-motor.o: motor.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} motor.c -o motor.o
-
-pwm.o: pwm.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} pwm.c -o pwm.o
-
-motor3.elf: ${OBJECTS}
-	$(CC) ${OBJECTS} ${LINK_FLAGS} -o motor3.elf
-
-motor3.hex: motor3.elf
-	$(OBJCOPY) -O ihex  motor3.elf motor3.hex
-	$(SIZE) motor3.elf motor3.elf motor3.hex
-
-clean:
-	rm -f ${OBJECTS} motor3.elf motor3.hex motor3.map
-
-
-###### OLD stuff to be deleted:
-
-#CMSIS := ../../cmsis_1.30
-#INCLUDES := \
-#    -I$(CMSIS)/Drivers/include \
-#    -I$(CMSIS)/Core/CM3/CoreSupport \
-#    -I$(CMSIS)/Core/CM3/DeviceSupport/NXP/LPC17xx \
-#    -I.
-
-#core_cm3.o: core_cm3_cmsis13.c
-#	$(CC) -c ${CFLAGS} ${INCLUDES} core_cm3_cmsis13.c -o core_cm3.o
-
-#system_LPC17xx.o: system_LPC17xx_cmsis13.c
-#	$(CC) -c ${CFLAGS} ${INCLUDES} system_LPC17xx_cmsis13.c -o system_LPC17xx.o
-
-#startup_LPC17xx.o: startup_LPC17xx_cmsis13.s
-#	$(AS) ${AS_FLAGS} ${INCLUDES} startup_LPC17xx_cmsis13.s -o startup_LPC17xx.o
-
-
-#lpc17xx_clkpwr.o: $(CMSIS)/Drivers/source/lpc17xx_clkpwr.c
-#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_clkpwr.c -o lpc17xx_clkpwr.o
-
-#lpc17xx_gpio.o: $(CMSIS)/Drivers/source/lpc17xx_gpio.c
-#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_gpio.c -o lpc17xx_gpio.o
-
-#lpc17xx_nvic.o: $(CMSIS)/Drivers/source/lpc17xx_nvic.c
-#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_nvic.c -o lpc17xx_nvic.o
-
-#lpc17xx_pinsel.o: $(CMSIS)/Drivers/source/lpc17xx_pinsel.c
-#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_pinsel.c -o lpc17xx_pinsel.o
-
-#lpc17xx_pwm.o: $(CMSIS)/Drivers/source/lpc17xx_pwm.c
-#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_pwm.c -o lpc17xx_pwm.o
-
-#lpc17xx_uart.o: $(CMSIS)/Drivers/source/lpc17xx_uart.c
-#	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/Drivers/source/lpc17xx_uart.c -o lpc17xx_uart.o
 

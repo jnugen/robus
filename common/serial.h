@@ -1,19 +1,18 @@
-// Copyright (c) 2011-2013 by IMC.  All rights reserved.
-
 #ifndef SERIAL_H_INCLUDED
 #define SERIAL_H_INCLUDED 1
 
-// Types start with first letter capitalized:
+// Copyright (c) 2011-2013 by IMC.  All rights reserved.
 
+// Structure pointer typedefs come before #include's:
+typedef struct Serial__Struct *Serial;
+
+// Next, come #inlcudes"
 #include "types.h"
 #include "ring_buffer.h"
+#include "serial.h"
 #include "uart.h"
 
-// Typedefs for serial and robus UART's:
-typedef struct Serial__Struct *Serial;
-typedef enum Serial__Mode Serial_Mode;
-
-// The main serial for character I/O:
+// Now it is save to define {Serial__Struct}:
 struct Serial__Struct {		// {Serial} structure
     Uart uart;			// {Uart} to use
     Logical preview_available;	// 1=> we have a preview character
@@ -24,9 +23,10 @@ struct Serial__Struct {		// {Serial} structure
     Ring_Buffer receive;	// Pointer to {receive_buffer}
 };
 
-// {Serial} data structures and routines:
+// {Serial} data structures:
 extern struct Serial__Struct Serial__uart0, Serial__uart1, Serial__uart3;
 
+// {Serial} routines:
 UByte Serial__character_get(Serial serial);
 UByte Serial__character_peek(Serial serial);
 void Serial__character_preview(Serial serial,  UByte character);
@@ -41,7 +41,7 @@ Integer Serial__hex_get(Serial serial);
 void Serial__hex_put(Serial serial, Integer value);
 Serial Serial__initialize(Serial serial, Uart uart, UInteger baud_rate,
   UByte function, UByte port, UByte tx_bit, UByte rx_bit,
-  Byte interrupt_number, UByte interrupt_priority);
+  Byte interrupt_number, UByte interrupt_priority, UByte slave_address);
 Logical Serial__input_pending(Serial serial);
 void Serial__interrupt(Serial serial);
 void Serial__interrupt_receive(Serial serial);

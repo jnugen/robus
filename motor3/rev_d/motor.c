@@ -21,7 +21,7 @@ void motor_stop(void)
     GPIO_ClearValue(2, IN1_PIN + IN2_PIN);
 }
 
-int motor_init(void)
+void motor_init(void)
 {
   GPIO_SetDir(2, IN1_PIN + IN2_PIN, 1);
 
