@@ -66,6 +66,15 @@ CMSIS_OBJECTS := \
     lpc17xx_pwm.o \
     lpc17xx_uart.o
 
+COMMON_OBJECTS := \
+    buffer.o \
+    ring_buffer.o \
+    robus.o \
+    serial.o \
+    systick.o \
+    trace.o \
+    uart.o
+
 #    lpc17xx_nvic.o \
 
 LD_SCRIPT := $(COMMON)/ldscript_rom_gnu.ld
@@ -84,32 +93,55 @@ LINK_FLAGS := \
     -Xlinker motor3.map \
     -Xlinker -T $(LD_SCRIPT)
 
+# Common core object files:
 core_cm3.o: $(CMSIS)/core/core_cm3.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/core/core_cm3.c -o core_cm3.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/core/core_cm3.c -o $@
 
 system_LPC17xx.o: $(CMSIS)/core/system_LPC17xx.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/core/system_LPC17xx.c -o system_LPC17xx.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/core/system_LPC17xx.c -o $@
 
 startup_LPC17xx.o: $(CMSIS)/core/startup_LPC17xx.s
-	$(AS) ${AS_FLAGS} ${INCLUDES} $(CMSIS)/core/startup_LPC17xx.s -o startup_LPC17xx.o
+	$(AS) ${AS_FLAGS} ${INCLUDES} $(CMSIS)/core/startup_LPC17xx.s -o $@
 
-
+#CMSIS 2.0 object files:
 lpc17xx_clkpwr.o: $(CMSIS)/drivers/src/lpc17xx_clkpwr.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_clkpwr.c -o lpc17xx_clkpwr.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_clkpwr.c -o $@
 
 lpc17xx_gpio.o: $(CMSIS)/drivers/src/lpc17xx_gpio.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_gpio.c -o lpc17xx_gpio.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_gpio.c -o $@
 
 lpc17xx_nvic.o: $(CMSIS)/drivers/src/lpc17xx_nvic.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_nvic.c -o lpc17xx_nvic.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_nvic.c -o $@
 
 lpc17xx_pinsel.o: $(CMSIS)/drivers/src/lpc17xx_pinsel.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_pinsel.c -o lpc17xx_pinsel.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_pinsel.c -o $@
 
 lpc17xx_pwm.o: $(CMSIS)/drivers/src/lpc17xx_pwm.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_pwm.c -o lpc17xx_pwm.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_pwm.c -o $@
 
 lpc17xx_uart.o: $(CMSIS)/drivers/src/lpc17xx_uart.c
-	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_uart.c -o lpc17xx_uart.o
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(CMSIS)/drivers/src/lpc17xx_uart.c -o $@
+
+# Common object files:
+buffer.o: $(COMMON)/buffer.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(COMMON)/buffer.c -o $@
+
+ring_buffer.o: $(COMMON)/ring_buffer.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(COMMON)/ring_buffer.c -o $@
+
+robus.o: $(COMMON)/robus.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(COMMON)/robus.c -o $@
+
+serial.o: $(COMMON)/serial.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(COMMON)/serial.c -o $@
+
+systick.o: $(COMMON)/systick.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(COMMON)/systick.c -o $@
+
+trace.o: $(COMMON)/trace.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(COMMON)/trace.c -o $@
+
+uart.o: $(COMMON)/uart.c
+	$(CC) -c ${CFLAGS} ${INCLUDES} $(COMMON)/uart.c -o $@
 
 

@@ -13,6 +13,7 @@ OBJECTS := \
     $(PROGRAM).o \
     motor.o \
     pwm.o \
+    ${COMMON_OBJECTS} \
     ${CMSIS_OBJECTS}
 
 $(PROGRAM).o: $(PROGRAM).c

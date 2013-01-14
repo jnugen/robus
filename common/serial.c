@@ -1,401 +1,11 @@
-// Copyright (c) 2011-2012 by IMC.  All rights reserved.
-
-#include "common.h"
+// Copyright (c) 2011-2013 by IMC.  All rights reserved.
 
 #include "lpc17xx_uart.h"
-#include "lpc17xx_libcfg.h"
 #include "lpc17xx_pinsel.h"
-
-
-// Routine definitions from here on:
-
-// {Buffer} data structures and routines:
-
-struct Buffer__Struct Buffer__get_buffer_struct;
-struct Buffer__Struct Buffer__put_buffer_struct;
-Buffer Buffer__get_buffer = &Buffer__get_buffer_struct;
-Buffer Buffer__put_buffer = &Buffer__put_buffer_struct;
-
-UByte Buffer__ubyte_get(
-  Buffer buffer)
-{
-    // This routine will return the next byte from {buffer}:
-
-    buffer->count--;
-    return buffer->ubytes[buffer->get_index++ & BUFFER_MASK];
-}
-
-void Buffer__ubyte_put(
-  Buffer buffer,
-  UByte ubyte)
-{
-    // This routine will enter {byte} into buffer:
-
-    buffer->count++;
-    buffer->ubytes[buffer->put_index++ & BUFFER_MASK] = ubyte;
-}
-
-UByte Buffer__checksum(
-  Buffer buffer,
-  UByte count)
-{
-    // This routine will return the 4-bit checksum of the first {count}
-    // bytes in {buffer}.
-
-    UByte checksum = 0;
-    UByte index = buffer->get_index;
-    while (count != 0) {
-	checksum += buffer->ubytes[index++ & BUFFER_MASK];
-	count--;
-    }
-    checksum = (checksum + (checksum >> 4)) & 0xf;
-    return checksum;
-}
-
-
-void Buffer__reset(
-  Buffer buffer)
-{
-    // This routine will reset {buffer} to be empty:
-
-    buffer->count = 0;
-    buffer->get_index = 0;
-    buffer->put_index = 0;
-}
-
-// {Logical} stuff:
-const Logical Logical__true = (Logical)1;
-const Logical Logical__false = (Logical)0;
-
-// {Ring_Buffer} routines:
-
-Ring_Buffer Ring_Buffer__initialize(
-  Ring_Buffer ring_buffer)
-{
-    // This routine will initialize {ring_buffer} to be empty.
-    // The value passed in as {ring_buffer} is returned.
-
-    ring_buffer->head = 0;
-    ring_buffer->tail = 0;
-    return ring_buffer;
-}
-
-Logical Ring_Buffer__is_empty(Ring_Buffer ring_buffer)
-{
-    UByte result;
-
-    result = 0;
-    if ((ring_buffer->head & RING_BUFFER__MASK) ==
-      (ring_buffer->tail & RING_BUFFER__MASK)) {
-	result = 1;
-    }
-    return result;
-}
-
-void Ring_Buffer__head_increment(
-  Ring_Buffer ring_buffer)
-{
-    ring_buffer->head = (ring_buffer->head + 1) & RING_BUFFER__MASK;
-}
-
-// This routine will return 1 if {ring_buffer} is full, and 0 otherise.
-UByte Ring_Buffer__is_full(
-  Ring_Buffer ring_buffer)
-{
-    UByte result;
-
-    result = 0;
-    if ((ring_buffer->tail & RING_BUFFER__MASK) ==
-      ((ring_buffer->head + 1) & RING_BUFFER__MASK)) {
-	result = 1;
-    }
-    return result;
-}
-
-void Ring_Buffer__tail_increment(
-  Ring_Buffer ring_buffer)
-{
-    ring_buffer->tail = (ring_buffer->tail + 1) & RING_BUFFER__MASK;
-}
-
-// {Robus} data structures and routines:
-
-struct Robus__Struct Robus___null_struct;
-Robus Robus__null = &Robus___null_struct;
-
-void Robus__byte_put(
-  Robus robus,
-  UByte byte)
-{
-    // This routine will send {byte} to the Robus bus attached to {robus}.
-    // The echo byte from sending {byte} is read back.
-    UByte buffer[1];
-
-    // Send {byte} to {robus}:
-    buffer[0] = byte;
-    (void)UART_RS485SendData((LPC_UART1_TypeDef *)robus->uart, buffer, 1);
-
-    TRACE(byte | 0x200);
-
-    // Read the echo back from {robus}:
-    if (Robus__byte_get(robus) != byte) {
-	//robus->errors++;
-    }
-}
-
-UByte Robus__byte_get(
-  Robus robus)
-{
-    // This routine will get one byte of response Robus bus attached to {robus}.
-    // If no byte is found after a resonable amount of time, 0x5a is returned
-    // instead.
-
-    UByte byte;
-    UByte buffer[1];
-    UByte count;
-    UInteger tries;
-
-    // Try for a while to get the byte:
-    byte = 0x5a;
-    for (tries = 0; tries < 20; tries++) {
-	// See if anything has come in yet:
-	count = UART_Receive(robus->uart, buffer, 1, NONE_BLOCKING);
-	//count = UARTReceive(robus->uart, buffer, 1);
-	if (count == 1) {
-	    // We got a byte; return it:
-	    byte = buffer[0];
-	    TRACE(byte | 0x1000);
-	    return byte;
-	}
-
-	// FIXME!!! Is this necessary???
-	// Wait for a millisecond:
-	SysTick__delay(1);
-    }
-
-    // We have timed out; return 0x5a:
-    //robus->errors++;
-    TRACE(0x800 | 0x5a);
-
-    return 0x5a;
-}
-
-void Robus__request_begin(
-  Robus robus,
-  UByte address,
-  UByte command)
-{
-    // This routine will start a the output of a command to the {robus}
-    // module at {address}.  The first byte of the command is {command}.
-
-    // If we are changing addresses.  Flush any previous commands:
-    if (address != robus->address) {
-        Robus__request_flush(robus);
-	robus->address = address;
-    }
-
-    // Send out the new {address}:
-    Uart uart = robus->uart;
-    Uart__frame_put(uart, (Frame)address | (Frame)0x100);
-
-    // If 8th bit of address is 0, an acknowledge byte is requred:
-    if ((address & 0x80) == 0) {
-	// Deal with an acknowledge byte:
-	(void)Uart__frame_put(uart, (Frame)0xa5);
-    }
-
-    // Remember how many bytes are ready to be sent:
-    Buffer put_buffer = robus->put_buffer;
-    robus->commands_length = put_buffer->count;
-
-    // Stuff {command} into {put_buffer}:
-    Robus__request_ubyte_put(robus, command);
-}
-
-void Robus__request_end(
-  Robus robus)
-{
-    Robus__request_flush(robus);
-}
-
-void Robus__request_flush(
-  Robus robus)
-{
-    // This routine will flush out the commands stored {robus} and get
-    // response data that is needed.
-
-    // Grab some values from {robus}:
-    UByte commands_length = robus->commands_length;
-    Buffer put_buffer = robus->put_buffer;
-    Buffer get_buffer = robus->get_buffer;
-    Uart uart = robus->uart;
-    //Serial debug = robus->serial;
-
-    //Serial__string_put(debug, "Flush[");
-
-    // Send as many request/response pairs as needed to clear {put_buffer}:
-    UByte put_buffer_count = put_buffer->count;
-    while (put_buffer_count != 0) {
-	// Can we can clear out the entire buffer this pass?:
-	if (put_buffer_count <= 15) {
-	    // Yes, we can:
-	    commands_length = put_buffer_count;
-	}
-
-	// Output the request packet header:
-	UByte checksum = Buffer__checksum(put_buffer, commands_length);
-	UByte request_header = (commands_length << 4) | checksum;
-	Uart__frame_put(uart, (UShort)request_header);
-
-	// Output the request packet data:
-	UByte index;
-	for (index = 0; index < commands_length; index++) {
-	    UByte ubyte = Buffer__ubyte_get(put_buffer);
-	    Uart__frame_put(uart, (UShort)ubyte);
-	}
-	put_buffer_count -= commands_length;
-
-	// Wait for the response packet header:
-	UByte response_header = (Byte)Uart__frame_get(uart);
-	UByte response_length = response_header >> 4;
-
-	// Read in the response packet data:
-	checksum = 0;
-	for (index = 0; index < response_length; index++) {
-	    UByte ubyte = (Byte)Uart__frame_get(uart);
-	    checksum += ubyte;
-	    Buffer__ubyte_put(get_buffer, ubyte);
-	}
-    }
-    robus->commands_length = 0;
-
-    //Serial__string_put(debug, "]\n");
-}
-
-void Robus__request_ubyte_put(
-  Robus robus,
-  UByte ubyte)
-{
-    // This routine will enter {ubyte} into the command put buffer for {robus}.
-    // The byte should be the continuation of a multi-byte command.
-
-    // Stuff {byte} into {put_buffer}:
-    Buffer put_buffer = robus->put_buffer;
-    Buffer__ubyte_put(put_buffer, ubyte);
-
-    // If the buffer is already over 15 bytes, flush any pending commands:
-    if (put_buffer->count > 15) {
-	Robus__request_flush(robus);
-    }
-}
-
-//UByte Robus__command_byte_get(
-//  Robus robus,
-//  UByte command)
-//{
-//    // This routine will send {command} to the current selected Robus module
-//    // attached to {robus} and return the single byte response.
-//
-//    UByte tries;
-//    Byte result;
-//
-//    //UByte address = robus->address;
-//    for (tries = 0; tries < 5; tries++) {
-//	// Send {command}:
-//	Robus__byte_put(robus, command);
-//
-//	// Get {byte}:
-//	result = Robus__byte_get(robus);
-//
-//	// If there are no errors, we are done:
-//	//if (robus->errors == 0) {
-//	//    break;
-//	//}
-//
-//	// We had an error, forget the module address to force reselect:
-//	robus->address = 0xff;
-//    }
-//    return result;
-//}
-//
-//void Robus__command_byte_put(
-//  Robus robus,
-//  UByte command,
-//  Byte byte)
-//{
-//    // This routine will send {command} to the currently selected Robus module
-//    // attached to {robus} followed by {byte}.
-//
-//    // Send {command}:
-//    Robus__byte_put(robus, command);
-//
-//    // Send {byte}:
-//    Robus__byte_put(robus, byte);
-//}
-
-void Robus__initialize(
-  Robus robus,
-  Serial debug_serial,
-  Buffer get_buffer,
-  Buffer put_buffer)
-{
-    // This routine will initialize {robus} data structure and stuff
-    // {serial} into it.  The UART connect to the {robus}.
-
-    LPC_UART_TypeDef *uart;
-
-    // Robus is connected to UART1:
-    uart = (LPC_UART_TypeDef *)LPC_UART1;
-    robus->address = 0xff;
-    robus->debug_serial = debug_serial;
-    robus->uart = uart;
-    robus->get_buffer = get_buffer;
-    robus->put_buffer = put_buffer;
-
-    Buffer__reset(get_buffer);
-    Buffer__reset(put_buffer);
-
-    if (1) {
-	robus->bus_serial = Serial__initialize(&Serial__uart1,
-	  uart, 500000, 2, 2, 0, 1, UART1_IRQn, 0x1);
-    } else {
-	//// Enable UART Rx interrupt
-	//UART_IntConfig((LPC_UART_TypeDef *)LPC_UART1, UART_INTCFG_RBR, ENABLE);
-	//// Enable UART line status interrupt
-	//UART_IntConfig((LPC_UART_TypeDef *)LPC_UART1, UART_INTCFG_RLS, ENABLE);
-	//
-	//// preemption = 1, sub-priority = 1
-	//NVIC_SetPriority(UART1_IRQn, ((0x01<<3)|0x01));
-	//// Enable Interrupt for UART0 channel
-	//NVIC_EnableIRQ(UART1_IRQn);
-	//
-	//__BUF_RESET(rb.rx_head);
-	//__BUF_RESET(rb.tx_head);
-	//__BUF_RESET(rb.rx_tail);
-	//__BUF_RESET(rb.tx_tail);
-    }
-
-    // Enable UART1 Transmit:
-    UART_TxCmd(uart, ENABLE);
-
-    // Enble UART1 to Receive:
-    UART_RS485ReceiverCmd((LPC_UART1_TypeDef *)uart, ENABLE);
-
-    // Flush any garbage that came in:
-    //Robus__quiesce(robus);
-}
-
-UByte Robus__ubyte_get(
-  Robus robus)
-{
-    // This routine will get the next response byte from {robus}.
-
-    Robus__request_flush(robus);
-    return Buffer__ubyte_get(robus->get_buffer);
-}
+#include "uart.h"
+#include "serial.h"
 
 // {Serial} data structures and routines:
-
 struct Serial__Struct Serial__uart0, Serial__uart1, Serial__uart3;
 
 // This routine will return the next charcter from {serial}.
@@ -469,7 +79,7 @@ void Serial__character_put(
   Serial serial,
   UByte character)
 {
-    Frame tx_buffer[4];
+    Frame tx_buffer[2];
 
     // Make sure that 8th bit is clear:
     character &= 0x7f;
@@ -481,7 +91,6 @@ void Serial__character_put(
  	Serial__send_blocking(serial, tx_buffer, 1);
     } else if (character == '\n') {
 	// {character} is a new-line; echo as CRLF:
-	//FIXME: Should be able to call Serial__send_blocking() just once!!!
 	tx_buffer[0] = '\r';
  	Serial__send_blocking(serial, tx_buffer, 1);
 	tx_buffer[0] = '\n';
@@ -493,6 +102,7 @@ void Serial__character_put(
     } else {
 	// {character} should not be printed:
     }
+
 }
 
 // This routine is a helper routine that stores {character} into {serial}
@@ -702,7 +312,8 @@ Serial Serial__initialize(
   UByte tx_bit,
   UByte rx_bit,
   Byte interrupt_number,
-  UByte interrupt_priority)
+  UByte interrupt_priority,
+  UByte match_address)
 {
     PINSEL_CFG_Type pin_config;
     UART_CFG_Type uart_config;
@@ -760,10 +371,19 @@ Serial Serial__initialize(
 	rs485_config.DirCtrlPin = UART1_RS485_DIRCTRL_DTR;
 	rs485_config.DirCtrlPol_Level = SET;
 	rs485_config.DelayValue = 0;
-	rs485_config.NormalMultiDropMode_State = DISABLE;
-	rs485_config.AutoAddrDetect_State = DISABLE;
-	rs485_config.MatchAddrValue = 0;
-	rs485_config.Rx_State = ENABLE;
+	if (0) {
+	    // Recieve everything on bus:
+	    rs485_config.NormalMultiDropMode_State = DISABLE;
+	    rs485_config.AutoAddrDetect_State = DISABLE;
+	    rs485_config.MatchAddrValue = 0;
+	    rs485_config.Rx_State = ENABLE;
+	} else {
+	    // Receive just stuff addressed to {match_address}:
+	    rs485_config.NormalMultiDropMode_State = ENABLE;
+	    rs485_config.AutoAddrDetect_State = ENABLE;
+	    rs485_config.MatchAddrValue = match_address;
+	    rs485_config.Rx_State = DISABLE;
+	}
 	UART_RS485Config((LPC_UART1_TypeDef *)uart, &rs485_config);
     }
 
@@ -774,7 +394,7 @@ Serial Serial__initialize(
 	// Do not enable transmit interrupt here, since it is handled by
 	// uart_send() function, just to reset Tx Interrupt state for the
 	// first time
-	uart_transmit_interrupt_status = (Logical)0;
+	uart_transmit_interrupt_status = RESET;
 
 	if (interrupt_number >= 0) {
 	    // preemption = 1, sub-priority = {interrupt_priority}:
@@ -908,10 +528,10 @@ void Serial__interrupt_transmit(
     	UART_IntConfig(uart, UART_INTCFG_THRE, DISABLE);
 
 	// Reset Tx Interrupt state:
-    	uart_transmit_interrupt_status = (Logical)0;
+    	uart_transmit_interrupt_status = RESET;
     } else {
 	// Set Tx Interrupt state:
-	uart_transmit_interrupt_status = (Logical)1;
+	uart_transmit_interrupt_status = SET;
     	UART_IntConfig(uart, UART_INTCFG_THRE, ENABLE);
     }
 }
@@ -1056,7 +676,7 @@ UInteger Serial__send(
     // If the current {uart_transmit_interrupt_status} is reset, it means
     // the Tx interrupt must be re-enabled via a call to
     // {Serial__interrupt_transmit}():
-    if (uart_transmit_interrupt_status == (Logical)0) {
+    if (uart_transmit_interrupt_status == RESET) {
 	Serial__interrupt_transmit(serial);
     } else {
 	// Otherwise, re-enable Tx Interrupt: */
@@ -1127,176 +747,3 @@ void Serial__white_space_skip(
     }
 }
 
-// SysTick routines:
-
-// This interrupt routine will increment {SysTickCnt} every millisecond.
-void SysTick_Handler (void) {
-    SysTickCnt++;
-}
-
-// This routine will delay for {ms} milliseconds.
-void SysTick__delay (
-  unsigned long ms)
-{
-    unsigned long sys_tick_count;
-
-    // Get current value:
-    sys_tick_count = SysTickCnt;
-
-    // Wait until we get the value we want:
-    while ((SysTickCnt - sys_tick_count) < ms) {
-	// do nothing:
-    }
-}
-
-// {Uart} routines:
-
-volatile Logical uart_transmit_interrupt_status;
-
-// This routine is invoked everytime UART0 issues an intterupt.  This routine
-// handles both transmit and receive interrupts.
-void UART0_IRQHandler(void)
-{
-    Serial__interrupt(&Serial__uart0);
-}
-
-// This routine is invoked everytime UART0 issues an intterupt.  This routine
-// handles both transmit and receive interrupts.
-void UART1_IRQHandler(void)
-{
-    Serial__interrupt(&Serial__uart1);
-}
-
-// This routine is invoked everytime UART3 issues an intterupt.  This routine
-// handles both transmit and receive interrupts.
-void UART3_IRQHandler(void)
-{
-    Serial__interrupt(&Serial__uart3);
-}
-
-void Uart__frame_put(
-  Uart uart,
-  UShort frame)
-{
-    // This routine will send {frame} to the to {uart}.
-    // The echo byte from sending {byte} is read back.
-    UByte buffer[1];
-
-    // Send {byte} to {robus}:
-    if ((frame & 0x100) != 0) {
-	// Set 9th bit here:
-	(void)UART_RS485SendSlvAddr((LPC_UART1_TypeDef *)uart, frame);
-    } else {
-	buffer[0] = (UByte)frame;
-	(void)UART_RS485SendData((LPC_UART1_TypeDef *)uart, buffer, 1);
-    }
-
-    TRACE(frame | 0x200);
-
-    // Read the echo back from {robus}:
-    (void)Uart__frame_get(uart);
-}
-
-UShort Uart__frame_get(
-  Uart uart)
-{
-    // This routine will get one byte of response Robus bus attached to {robus}.
-    // If no byte is found after a resonable amount of time, 0x5a is returned
-    // instead.
-
-    UShort frame;
-    UByte buffer[1];
-    UByte count;
-    UByte tries;
-
-    // Try for a while to get the byte:
-    frame = 0x5a;
-    for (tries = 0; tries < 20; tries++) {
-	// See if anything has come in yet:
-	count = UART_Receive(uart, buffer, 1, NONE_BLOCKING);
-	//count = UARTReceive(robus->uart, buffer, 1);
-	if (count == 1) {
-	    // We got a byte; return it:
-	    frame = buffer[0];
-	    TRACE(frame | 0x1000);
-	    return frame;
-	}
-
-	// Wait for a millisecond, to give the bus some time:
-	SysTick__delay(1);
-    }
-
-    // We have timed out; return 0x5a:
-    TRACE(0x800 | 0x5a);
-
-    return 0x5a;
-}
-
-// This routine will process {line_flags} for {uart}.
-void uart_interrupt_error(
-  Uart uart,
-  UInteger line_flags)
-{
-    // Loop forever:
-    while (1) {
-	// do nothing:
-    }
-}
-
-#ifdef  DEBUG
-// This routine is called whenever an check macro fails.
-void check_failed(
-  UByte *file,
-  UInteger line)
-{
-    // User can add his own implementation to report the file name and
-    // line number, example:
-    //    printf("Wrong parameters value: file %s on line %d\r\n", file, line);
-
-    // Infinite loop:
-    while (1) {
-	// do nothing
-    }
-}
-#endif
-
-// {Trace} data structures and routines:
-UShort trace_buffer[TRACE_SIZE];
-UShort trace_index = 0;
-
-void trace_dump(
-  Serial serial)
-{
-    Integer index = 0;
-    for (index = 0; index < TRACE_SIZE; index++) {
-        // Fetch the {trace} value and clear it out of the trace buffer:
-	UInteger masked_index = (index + trace_index) & TRACE_MASK;
-	UInteger trace = trace_buffer[masked_index];
-	trace_buffer[masked_index] = 0;
-
-	// Show any tracing flags:
-	if ((trace & 0x1000) != 0) {
-	    // Received (Get) byte:
-	    Serial__character_put(serial, 'G');
-	    trace &= ~0x1000;
-	}
-	if ((trace & 0x200) != 0) {
-	    // Transmitted (Put) byte:
-	    Serial__character_put(serial, 'P');
-	    trace &= ~0x200;
-	}
-	if ((trace & 0x800) != 0) {
-	    // Timeout byte:
-	    Serial__character_put(serial, 'T');
-	    trace &= ~0x800;
-	}
-
-	// Output the remaining trace value:
-	Serial__hex_put(serial, trace);
-	char character = ' ';
-	if ((index & 0xf) == 0xf) {
-	    character = '\n';
-	}
-	Serial__character_put(serial, character);
-    }
-}
