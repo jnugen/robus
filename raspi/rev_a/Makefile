@@ -6,10 +6,11 @@ PROJECT_ROOT := ../..
 include $(PROJECT_ROOT)/common/common.mk
 
 OBJECTS := \
+    ${COMMON_OBJECTS} \
     $(CMSIS_OBJECTS) \
     $(PROGRAM).o
 
-$(PROGRAM).o:
+$(PROGRAM).o: $(PROGRAM).c
 	$(CC) -c ${CFLAGS} ${INCLUDES} raspi.c -o $@
 
 $(PROGRAM).elf: ${OBJECTS}

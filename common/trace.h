@@ -13,6 +13,7 @@
 extern UShort trace_buffer[];
 extern UShort trace_index;
 #define TRACE(byte) trace_buffer[trace_index++ & TRACE_MASK] = byte
+//#define TRACE(byte) // do nothing
 
 // trace routines:
 void trace_dump(Serial serial);

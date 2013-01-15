@@ -1,11 +1,10 @@
 // Copyright (c) 2011-2012 by IMC.  All rights reserved.
 
-#include "common.h"
-
-#include "LPC17xx.h"
 #include "lpc17xx_uart.h"
 #include "lpc17xx_libcfg.h"
 #include "lpc17xx_pinsel.h"
+
+#include "common.h"
 
 // Typedefs for serial and robus UART's:
 typedef struct Discovery__Struct *Discovery;
@@ -22,31 +21,21 @@ struct Discovery__Struct {
     Logical stack[DISCOVERY_TOTAL_BITS]; // Stack to work with
     Integer top;		// Current valid top bit in stack
     Uart uart_8bit;		// 8-bit UART (up stream)
-    Uart1 uart_9bit;		// 9-bit UART (for bus)
-};
-
-// {Discovery} routines:
-extern struct Discovery__Struct Discovery__one_and_only__struct;
-extern Discovery Discovery__one_and_only;
-
-void Discovery__byte_send(Discovery discovery, UByte ubyte);
-void Discovery__hex_send(Discovery discovery, UByte uart_8bit);
-void Discovery__initialize(Discovery discovery,
-  Uart uart8_bit, Uart1 uart9_bit);
-void Discovery__scan(Discovery discovery);
-void Discovery__stack_send(Discovery discovery, UByte *stack);
+    Uart uart_9bit;		// 9-bit UART (for bus)
+} Discovery__one_and_only__struct;
+Discovery Discovery__one_and_only = &Discovery__one_and_only__struct;
 
 // Main routines:
 Integer main(void);
 Integer c_entry(void);
 Integer abs(Integer value);
 
-// Command parse routines:
-void command_id_show(Serial serial, Robus robus);
-void command_id_string_show(Serial serial, Robus robus);
-UByte command_id_byte_show(Serial serial, Robus robus);
-//void command_parse_navigate(Serial serial, Motor2 motor2, Shaft2 shaft2);
-
+// {Discovery} routines:
+void Discovery__byte_send(Discovery discovery, UByte ubyte);
+void Discovery__hex_send(Discovery discovery, UByte uart_8bit);
+void Discovery__initialize(Discovery discovery, Uart uart8_bit, Uart uart9_bit);
+void Discovery__scan(Discovery discovery);
+void Discovery__stack_send(Discovery discovery, UByte *stack);
 
 // Routine definitions from here on:
 
@@ -60,9 +49,6 @@ Integer main(void)
 // ... but for some reason, we use c_entry instead:
 Integer c_entry(void)
 {
-    // Make sure that global variable SystemCoreClock is correct:
-    SystemCoreClockUpdate();
-
     // Generate interrupt each 1 ms:
     SysTick_Config(SystemCoreClock/1000 - 1);
 
@@ -80,12 +66,12 @@ Integer c_entry(void)
 
     Robus robus = Robus__null;
     Robus__initialize(robus,
-      console, Buffer__get_buffer, Buffer__put_buffer, 0);
+      console, Buffer__get_buffer, Buffer__put_buffer, 0xff);
 
     //Serial__string_put(console, "Hello\n");
 
     Uart uart_8bit = console->uart;
-    Uart1 uart_9bit = robus->uart1;
+    Uart uart_9bit = robus->uart1;
     Frame high_bits = (Frame)-1;
     Frame frame8_out = (Frame)-1;
     Frame frame9_out = (Frame)-1;
@@ -203,72 +189,14 @@ Integer c_entry(void)
 	}
     }
 
-    Serial__string_put(console, "Robus:\n");
-    // Basic command loop:
-    while (1) {
-	UByte command_letter;
-
-	// Generate a prompt:
-	Serial__character_put(console, '>');
-	Serial__character_put(console, '>');
-
-	// Reset errors:
-	Serial__error = 0;
-
-	// Parse the command letter:
-	Serial__white_space_skip(console);
-	command_letter = Serial__letter_get(console);
-
-	switch (command_letter) {
-	  case 'd':
-	    // D ; dump trace buffer
-	    if (Serial__end_of_line(console)) {
-		trace_dump(console);
-	    }
-	    break;
-	  case 'l':
-	    {
-		Integer character_code = Serial__hex_get(console);
-		if (Serial__end_of_line(console)) {
-		    Robus__request_begin(robus, 0x92, 0x10);
-		    Robus__request_ubyte_put(robus, character_code);
-		    Robus__request_end(robus);
-		}
-	    }
-	    break;
-	  case 't':
-	    // T {ubyte} ; Send {ubyte} to LCD:
-	    {
-		Integer character_code = Serial__hex_get(console);
-		if (Serial__end_of_line(console)) {
-		    Serial__label_hex(console,
-		      "char", (Character)character_code);
-		    Serial__character_put(console, '\n');
-		}
-	    }
-	    break;
-	  default:
-	    // Unknown command:
-	    if (Serial__end_of_line(console)) {
-		Serial__string_put(console, "Huh?\n");
-	    }
-	    break;
-	}
-    }
-
     // We never get here:
     return 1;
 }
 
-// {Discovery} data structures and routines:
-
-struct Discovery__Struct Discovery__one_and_only__struct;
-Discovery Discovery__one_and_only = &Discovery__one_and_only__struct;
-
 void Discovery__initialize(
   Discovery discovery,
   Uart uart_8bit,
-  Uart1 uart_9bit)
+  Uart uart_9bit)
 {
     discovery->low_address = 0;
     discovery->high_address = 0;

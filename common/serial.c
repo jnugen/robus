@@ -371,7 +371,7 @@ Serial Serial__initialize(
 	rs485_config.DirCtrlPin = UART1_RS485_DIRCTRL_DTR;
 	rs485_config.DirCtrlPol_Level = SET;
 	rs485_config.DelayValue = 0;
-	if (0) {
+	if (match_address = 0xff) {
 	    // Recieve everything on bus:
 	    rs485_config.NormalMultiDropMode_State = DISABLE;
 	    rs485_config.AutoAddrDetect_State = DISABLE;

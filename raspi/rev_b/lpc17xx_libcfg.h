@@ -1,27 +1,21 @@
-/**********************************************************************
-* $Id$		lpc17xx_libcfg.h			2010-05-21
-*//**
-* @file		lpc17xx_libcfg.h
-* @brief	Library configuration file
-* @version	2.0
-* @date		21. May. 2010
-* @author	NXP MCU SW Application Team
-*
-* Copyright(C) 2010, NXP Semiconductor
-* All rights reserved.
-*
-***********************************************************************
-* Software that is described herein is for illustrative purposes only
-* which provides customers with programming information regarding the
-* products. This software is supplied "AS IS" without any warranties.
-* NXP Semiconductors assumes no responsibility or liability for the
-* use of the software, conveys no license or title under any patent,
-* copyright, or mask work right to the product. NXP Semiconductors
-* reserves the right to make changes in the software without
-* notification. NXP Semiconductors also make no representation or
-* warranty that such application will be suitable for the specified
-* use without further testing or modification.
-**********************************************************************/
+/***********************************************************************
+ * @file		lpc17xx_libcfg.h
+ * @purpose		Library configuration file
+ * @version		2.0
+ * @date		21. May. 2010
+ * @author		NXP MCU SW Application Team
+ **************************************************************************
+ * Software that is described herein is for illustrative purposes only
+ * which provides customers with programming information regarding the
+ * products. This software is supplied "AS IS" without any warranties.
+ * NXP Semiconductors assumes no responsibility or liability for the
+ * use of the software, conveys no license or title under any patent,
+ * copyright, or mask work right to the product. NXP Semiconductors
+ * reserves the right to make changes in the software without
+ * notification. NXP Semiconductors also make no representation or
+ * warranty that such application will be suitable for the specified
+ * use without further testing or modification.
+ **************************************************************************/
 
 #ifndef LPC17XX_LIBCFG_H_
 #define LPC17XX_LIBCFG_H_
@@ -34,6 +28,7 @@
    the "CHECK_PARAM" macro in the FW library code */
 
 #define DEBUG
+
 
 /******************* PERIPHERAL FW LIBRARY CONFIGURATION DEFINITIONS ***********************/
 
@@ -52,15 +47,15 @@
 #define _UART
 #define _UART0
 #define _UART1
-//#define _UART2
-//#define _UART3
+#define _UART2
+#define _UART3
 
 /* SPI ------------------------------- */
 //#define _SPI
 
 /* SSP ------------------------------- */
-#define _SSP
-#define _SSP0
+//#define _SSP
+//#define _SSP0
 //#define _SSP1
 
 /* SYSTICK --------------------------- */
@@ -91,8 +86,8 @@
 
 
 /* PWM ------------------------------- */
-#define _PWM
-#define _PWM1
+//#define _PWM
+//#define _PWM1
 
 /* RTC ------------------------------- */
 //#define _RTC
