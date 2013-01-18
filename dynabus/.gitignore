@@ -1,7 +1,2 @@
-*.o
-*.map
-*.hex
-*.srec
-*.elf
-*.wrn
+rev_a
 
