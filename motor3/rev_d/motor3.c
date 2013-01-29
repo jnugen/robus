@@ -49,6 +49,46 @@ Integer main(void)
 // ... but for some reason, we use c_entry instead:
 Integer c_entry(void)
 {
+#ifdef BLINKY
+    if (1) {
+	#include "lpc17xx_gpio.h"
+	// Configure P0.0 and P0.1 as digital outputs:
+	PINSEL_CFG_Type pin_config;
+	pin_config.Pinnum = 0;
+	pin_config.Portnum = 0;
+	pin_config.Funcnum = 0;
+	pin_config.Pinmode = 0;
+	pin_config.OpenDrain = 0;
+	PINSEL_ConfigPin(&pin_config);
+	pin_config.Pinnum = 1;
+	PINSEL_ConfigPin(&pin_config);
+	GPIO_SetDir(0, 1<<0, 1);
+	GPIO_SetDir(0, 1<<1, 1);
+
+	// The LED spans P1.26 and P1.29:
+	if (1) {
+	    GPIO_SetValue(0, 1<<0);
+	    GPIO_ClearValue(0, 1<<1);
+	} else {
+	    GPIO_ClearValue(0, 1<<0);
+	    GPIO_SetValue(0, 1<<1);
+	}
+
+	// Generate interrupt each 1 ms:
+	SysTick_Config(SystemCoreClock/1000 - 1);
+
+	// Blink the LED:
+	while (1) {
+	    GPIO_ClearValue(0, 1<<0);
+	    GPIO_SetValue(0, 1<<1);
+	    SysTick__delay(200);
+	    GPIO_SetValue(0, 1<<0);
+	    GPIO_ClearValue(0, 1<<1);
+	    SysTick__delay(200);
+	}
+    }
+#endif // BLINKY
+
     // Make sure that global variable SystemCoreClock is correct:
     SystemCoreClockUpdate();
 

@@ -1,8 +1,8 @@
 // Copyright (c) 2011-2012 by IMC.  All rights reserved.
 
+#include "LPC17xx.h"
+#include "lpc_types.h"
 #include "lpc17xx_uart.h"
-#include "lpc17xx_libcfg.h"
-#include "lpc17xx_pinsel.h"
 
 #include "common.h"
 
@@ -25,11 +25,6 @@ struct Discovery__Struct {
 } Discovery__one_and_only__struct;
 Discovery Discovery__one_and_only = &Discovery__one_and_only__struct;
 
-// Main routines:
-Integer main(void);
-Integer c_entry(void);
-Integer abs(Integer value);
-
 // {Discovery} routines:
 void Discovery__byte_send(Discovery discovery, UByte ubyte);
 void Discovery__hex_send(Discovery discovery, UByte uart_8bit);
@@ -37,18 +32,51 @@ void Discovery__initialize(Discovery discovery, Uart uart8_bit, Uart uart9_bit);
 void Discovery__scan(Discovery discovery);
 void Discovery__stack_send(Discovery discovery, UByte *stack);
 
-// Routine definitions from here on:
-
-// Most compilers programs start from main...:
+//#define BLINKY 1
 
 Integer main(void)
 {
-    return c_entry();
-}
+#ifdef BLINKY
+    // The code below blinks the LED:
+    if (1) {
+	#include "lpc17xx_pinsel.h"
+	// Configure P1.26 and P1.29 as digital outputs:
+	PINSEL_CFG_Type pin_config;
+	pin_config.Pinnum = 26;
+	pin_config.Portnum = 1;
+	pin_config.Funcnum = 0;
+	pin_config.Pinmode = 0;
+	pin_config.OpenDrain = 0;
+	PINSEL_ConfigPin(&pin_config);
+	pin_config.Pinnum = 29;
+	PINSEL_ConfigPin(&pin_config);
+	GPIO_SetDir(1, 1<<26, 1);
+	GPIO_SetDir(1, 1<<29, 1);
 
-// ... but for some reason, we use c_entry instead:
-Integer c_entry(void)
-{
+	// The LED spans P1.26 and P1.29:
+	if (1) {
+	    GPIO_SetValue(1, 1<<26);
+	    GPIO_ClearValue(1, 1<<29);
+	} else {
+	    GPIO_ClearValue(1, 1<<26);
+	    GPIO_SetValue(1, 1<<29);
+	}
+
+	// Generate interrupt each 1 ms:
+	SysTick_Config(SystemCoreClock/1000 - 1);
+
+	// Blink the LED:
+	while (1) {
+	    GPIO_ClearValue(1, 1<<26);
+	    GPIO_SetValue(1, 1<<29);
+	    SysTick__delay(200);
+	    GPIO_SetValue(1, 1<<26);
+	    GPIO_ClearValue(1, 1<<29);
+	    SysTick__delay(200);
+	}
+    }
+#endif // BLINKY
+
     // Generate interrupt each 1 ms:
     SysTick_Config(SystemCoreClock/1000 - 1);
 
@@ -71,7 +99,7 @@ Integer c_entry(void)
     //Serial__string_put(console, "Hello\n");
 
     Uart uart_8bit = console->uart;
-    Uart uart_9bit = robus->uart1;
+    Uart uart_9bit = (Uart)robus->uart1;
     Frame high_bits = (Frame)-1;
     Frame frame8_out = (Frame)-1;
     Frame frame9_out = (Frame)-1;
@@ -189,6 +217,10 @@ Integer c_entry(void)
 	}
     }
 
+    while (1) {
+	// Do nothing:
+    }
+
     // We never get here:
     return 1;
 }
@@ -259,7 +291,6 @@ void Discovery__byte_send(
     uart_8bit->THR = ubyte & UART_THR_MASKBIT;
 }
 
-#ifdef  DEBUG
 // This routine is called whenever an check macro fails.
 void check_failed(
   UByte *file,
@@ -274,5 +305,3 @@ void check_failed(
 	// do nothing
     }
 }
-#endif
-

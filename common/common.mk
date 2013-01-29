@@ -89,11 +89,13 @@ LINK_FLAGS := \
     -Wl,--start-group \
     -L$(ARM_TOOLS_ROOT)/lib/gcc/arm-none-eabi/4.4.1/thumb2 \
     -L$(ARM_TOOLS_ROOT)/arm-none-eabi/lib/thumb2 \
-    -lc -lg -lstdc++ -lsupc++ -lgcc -lm \
+    -lc -lg -lgcc -lm \
     -Wl,--end-group \
     -Xlinker -Map \
     -Xlinker motor3.map \
     -Xlinker -T $(LD_SCRIPT)
+
+#    -lc -lg -lstdc++ -lsupc++ -lgcc -lm \
 
 # Common core object files:
 core_cm3.o: $(CMSIS)/core/core_cm3.c

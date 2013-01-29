@@ -2,6 +2,7 @@
 
 #include "lpc17xx_uart.h"
 #include "serial.h"
+#include "systick.h"
 #include "trace.h"
 #include "uart.h"
 

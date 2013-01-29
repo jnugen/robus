@@ -2,6 +2,7 @@
 
 #include "lpc17xx_uart.h"
 #include "robus.h"
+#include "systick.h"
 #include "trace.h"
 
 // {Robus} data structures and routines:
