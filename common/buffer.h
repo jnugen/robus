@@ -12,12 +12,12 @@ typedef struct Buffer__Struct *Buffer;
 #define BUFFER_MASK (BUFFER_SIZE - 1)
 
 struct Buffer__Struct {
-    UByte count;		// Number of bytes in {ubytes}
-    UByte get_index;		// Index to get next byte from
-    UByte put_index;		// Index to put next byte to
-    UByte save_count;		// Total number of bytes for saved location
-    UByte save_index;		// Get index for saved location
-    UByte ubytes[BUFFER_SIZE];	// Buffer of bytes
+    UInt8 count;		// Number of bytes in {ubytes}
+    UInt8 get_index;		// Index to get next byte from
+    UInt8 put_index;		// Index to put next byte to
+    UInt8 save_count;		// Total number of bytes for saved location
+    UInt8 save_index;		// Get index for saved location
+    UInt8 ubytes[BUFFER_SIZE];	// Buffer of bytes
 };
 
 // {Buffer} data structures and routines:
@@ -26,13 +26,13 @@ extern struct Buffer__Struct Buffer__put_buffer_struct;
 extern Buffer Buffer__get_buffer;
 extern Buffer Buffer__put_buffer;
 
-UByte Buffer__checksum(Buffer buffer, UByte count);
-UByte Buffer__remaining(Buffer buffer);
+UInt8 Buffer__checksum(Buffer buffer, UInt8 count);
+UInt8 Buffer__remaining(Buffer buffer);
 void Buffer__save_restore(Buffer buffer);
 void Buffer__save_end_set(Buffer buffer);
 void Buffer__save_start_set(Buffer buffer);
 void Buffer__reset(Buffer buffer);
-void Buffer__ubyte_put(Buffer buffer, UByte ubyte);
-UByte Buffer__ubyte_get(Buffer buffer);
+void Buffer__ubyte_put(Buffer buffer, UInt8 ubyte);
+UInt8 Buffer__ubyte_get(Buffer buffer);
 
 #endif // BUFFER_H_INCLUDED

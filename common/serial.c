@@ -9,10 +9,10 @@
 struct Serial__Struct Serial__uart0, Serial__uart1, Serial__uart3;
 
 // This routine will return the next charcter from {serial}.
-UByte Serial__character_get(
+UInt8 Serial__character_get(
   Serial serial)
 {
-    UByte character;
+    UInt8 character;
 
     character = Serial__character_peek(serial);
     serial->preview_available = 0;
@@ -21,12 +21,12 @@ UByte Serial__character_get(
 
 // The routine will return the next character from {serial}
 // without actually "reading" it.
-UByte Serial__character_peek(
+UInt8 Serial__character_peek(
   Serial serial)
 {
     Frame rx_buffer[1];
-    UByte character;
-    UInteger amount;
+    UInt8 character;
+    UInt32 amount;
 
     // Read the next character if we have not already done so:
     character = serial->character;
@@ -38,7 +38,7 @@ UByte Serial__character_peek(
 	        break;
 	    }
 	}
-	character = (UByte)rx_buffer[0];
+	character = (UInt8)rx_buffer[0];
 	character = Serial__character_store(serial, character);
     }
 
@@ -48,12 +48,12 @@ UByte Serial__character_peek(
 
 // This routine will return 1 if there is any character input pending
 // for {serial}.
-UByte Serial__input_pending(
+UInt8 Serial__input_pending(
   Serial serial)
 {
-    UByte rx_buffer[1];
-    UByte rx_count;
-    UByte character;
+    UInt8 rx_buffer[1];
+    UInt8 rx_count;
+    UInt8 character;
     
     if (!serial->preview_available) {
 	// No preview yet:
@@ -77,7 +77,7 @@ UByte Serial__input_pending(
 //  actually output.
 void Serial__character_put(
   Serial serial,
-  UByte character)
+  UInt8 character)
 {
     Frame tx_buffer[2];
 
@@ -108,9 +108,9 @@ void Serial__character_put(
 // This routine is a helper routine that stores {character} into {serial}
 // performing any needed transformations, character echoing, etc.  The
 // stored character is also returned.
-UByte Serial__character_store(
+UInt8 Serial__character_store(
   Serial serial,
-  UByte character)
+  UInt8 character)
 {
     // Convert carriage-return character into a new-line character:
     if (character == '\r') {
@@ -132,11 +132,11 @@ UByte Serial__character_store(
 // than white space, {Serial__error} is set to 1.  If {Serial__error} is set 1
 // either by this routine or a previous call, an additional "?\n" is output
 // to indicate that an error occured and 0 is returned.
-UByte Serial__end_of_line(
+UInt8 Serial__end_of_line(
   Serial serial)
 {
-    UByte character;
-    UByte result;
+    UInt8 character;
+    UInt8 result;
 
     // Read characters until we get a new-line:
     result = 1;
@@ -165,7 +165,7 @@ UByte Serial__end_of_line(
 // hexadecimal number.
 void Serial__hex_byte_put(
   Serial serial,
-  UByte byte)
+  UInt8 byte)
 {
     Serial__nibble_put(serial, byte >> 4);
     Serial__nibble_put(serial, byte);
@@ -175,14 +175,14 @@ void Serial__hex_byte_put(
 // over any whitespace and read in a string of hexadecimal digits and return
 // the resulting value.  If no hexadecimal digit is encountered,
 // {Serial__error} is set to one and 0 is returned.
-Integer Serial__hex_get(
+Int32 Serial__hex_get(
   Serial serial)
 {
-    UByte character;
-    UInteger value;
-    UByte digit;
-    UByte digits_count;
-    UByte negative;
+    UInt8 character;
+    UInt32 value;
+    UInt8 digit;
+    UInt8 digits_count;
+    UInt8 negative;
 
     // Skip over any preceeding white space:
     Serial__white_space_skip(serial);
@@ -246,12 +246,12 @@ Integer Serial__hex_get(
 // Negative numbers are prefaced with a minus sign.
 void Serial__hex_put(
   Serial serial,
-  Integer value)
+  Int32 value)
 {
-    UByte index;
-    UByte nibble;
-    UByte print;
-    UByte shift;
+    UInt8 index;
+    UInt8 nibble;
+    UInt8 print;
+    UInt8 shift;
 
     if (value < 0) {
  	value = -value;
@@ -262,7 +262,7 @@ void Serial__hex_put(
     print = 0;
     for (index = 0; index < 8; index++) {
 	shift -= 4;
-	nibble = (UByte)((value >> shift) & 0xf);
+	nibble = (UInt8)((value >> shift) & 0xf);
 	if (nibble != 0 || index == 7) {
 	    print = 1;
 	}
@@ -275,7 +275,7 @@ void Serial__hex_put(
 void Serial__float_label(
   Serial serial,
   char *label,
-  Float value)
+  Float32 value)
 {
     // This routine will output {label} followed by {value} to serial.
 
@@ -287,11 +287,11 @@ void Serial__float_label(
 
 void Serial__float_put(
   Serial serial,
-  Float value)
+  Float32 value)
 {
     // This routine will output {value} to {serial}.
 
-    Integer int_value = (Integer)(value * (Float)0x100);
+    Int32 int_value = (Int32)(value * (Float32)0x100);
     if (int_value < 0) {
 	Serial__character_put(serial, '-');
 	int_value = -int_value;
@@ -306,14 +306,14 @@ void Serial__float_put(
 Serial Serial__initialize(
   Serial serial,
   Uart uart,
-  UInteger baud_rate,
-  UByte function,
-  UByte port,
-  UByte tx_bit,
-  UByte rx_bit,
-  Byte interrupt_number,
-  UByte interrupt_priority,
-  UByte match_address)
+  UInt32 baud_rate,
+  UInt8 function,
+  UInt8 port,
+  UInt8 tx_bit,
+  UInt8 rx_bit,
+  Int8 interrupt_number,
+  UInt8 interrupt_priority,
+  UInt8 match_address)
 {
     PINSEL_CFG_Type pin_config;
     UART_CFG_Type uart_config;
@@ -420,9 +420,9 @@ void Serial__interrupt(
 {
     // This routine processes an interrupt for {serial}.
 
-    UInteger interrupt_source;
-    UInteger line_flags;
-    UInteger flags;
+    UInt32 interrupt_source;
+    UInt32 line_flags;
+    UInt32 flags;
 
     Uart uart = serial->uart;
 
@@ -462,8 +462,8 @@ void Serial__interrupt_receive(
     // This routine will process a empty frames from the UART FIFO associated
     // with {serial} into the ring buffer associated with {serial}.
 
-    UByte character;
-    UInteger amount_received;
+    UInt8 character;
+    UInt32 amount_received;
 
     Ring_Buffer receive = serial->receive;
     Uart uart = serial->uart;
@@ -512,7 +512,7 @@ void Serial__interrupt_transmit(
     while (!Ring_Buffer__is_empty(transmit)) {
 	// Move a piece of data into the transmit FIFO
 	Frame frame = transmit->frames[transmit->tail];
-	UByte ubyte = (UByte)frame;
+	UInt8 ubyte = (UInt8)frame;
 
         if (UART_Send(uart, &ubyte, 1, NONE_BLOCKING)) {
 	    // Update transmit ring FIFO tail pointer
@@ -540,7 +540,7 @@ void Serial__interrupt_transmit(
 void Serial__label_hex(
   Serial serial,
   char *label,
-  Integer value)
+  Int32 value)
 {
     // Output {label} followed by a colon:
     Serial__string_put(serial, label);
@@ -555,10 +555,10 @@ void Serial__label_hex(
 // If the character is upper case, it is converted to lower case.
 // If a non-letter is encountered, it is not read, {Serial__error} is
 // set to one, and '!' is returned.
-UByte Serial__letter_get(
+UInt8 Serial__letter_get(
   Serial serial)
 {
-    UByte character;
+    UInt8 character;
 
     // First peek a character:
     character = Serial__character_peek(serial);
@@ -582,22 +582,22 @@ UByte Serial__letter_get(
 // as a single hexadecimal digit.
 void Serial__nibble_put(
   Serial serial,
-  UByte nibble)
+  UInt8 nibble)
 {
     Serial__character_put(serial, "0123456789abcdef"[nibble & 15]);
 }
 
-UInteger Serial__receive(
+UInt32 Serial__receive(
   Serial serial,
   Frame *buffer,
-  UInteger amount)
+  UInt32 amount)
 {
     // This routine will receive up to {amount} bytes of data from {serial}
     // into {buffer}.  The total number of bytes received (possibly 0)
     // is returned.
 
     Frame *data = buffer;
-    UInteger bytes = 0;
+    UInt32 bytes = 0;
     Ring_Buffer receive = serial->receive;
     Uart uart = serial->uart;
 
@@ -631,9 +631,9 @@ UInteger Serial__receive(
 void Serial__receive_blocking(
   Serial serial,
   Frame *buffer,
-  UInteger amount)
+  UInt32 amount)
 {
-    UInteger received;
+    UInt32 received;
 
     while (amount != 0) {
 	received = Serial__receive(serial, buffer, amount);
@@ -644,13 +644,13 @@ void Serial__receive_blocking(
 
 // This routine will attempt to send up to {amount} bytes from {buffer}
 // to {uart}.  The number of bytes send (possibly 0) is returned.
-UInteger Serial__send(
+UInt32 Serial__send(
   Serial serial,
   Frame *buffer,
-  UInteger amount)
+  UInt32 amount)
 {
     Frame *data = buffer;
-    UInteger bytes = 0;
+    UInt32 bytes = 0;
     Uart uart = serial->uart;
     Ring_Buffer transmit = serial->transmit;
 
@@ -689,12 +689,12 @@ UInteger Serial__send(
 void Serial__send_blocking(
   Serial serial,
   Frame *buffer,
-  UInteger amount)
+  UInt32 amount)
 {
     // This routine will send the {amount} bytes in {buffer} to {serial}.
     // This routine will block until all {amount} bytes are in {buffer}.
 
-    UInteger tmp, tmp2;
+    UInt32 tmp, tmp2;
     Frame *data;
 
     tmp = amount;
@@ -712,13 +712,13 @@ void Serial__string_put(
   Serial serial,
   char *string)
 {
-    UByte character;
+    UInt8 character;
 
     // Output characters until '\0' (NULL) is encountered:
     character = '!';
     while (character != '\0') {
 	// Get the character:
-	character = (UByte)*string++;
+	character = (UInt8)*string++;
 
 	// Output the character:
 	Serial__character_put(serial, character);
@@ -731,7 +731,7 @@ void Serial__string_put(
 void Serial__white_space_skip(
   Serial serial)
 {
-    UByte character;
+    UInt8 character;
 
     while (1) {
 	// peek the next character:

@@ -11,11 +11,11 @@ Robus Robus__null = &Robus___null_struct;
 
 void Robus__byte_put(
   Robus robus,
-  UByte byte)
+  UInt8 byte)
 {
     // This routine will send {byte} to the Robus bus attached to {robus}.
     // The echo byte from sending {byte} is read back.
-    UByte buffer[1];
+    UInt8 buffer[1];
 
     // Send {byte} to {robus}:
     buffer[0] = byte;
@@ -29,17 +29,17 @@ void Robus__byte_put(
     }
 }
 
-UByte Robus__byte_get(
+UInt8 Robus__byte_get(
   Robus robus)
 {
     // This routine will get one byte of response Robus bus attached to {robus}.
     // If no byte is found after a resonable amount of time, 0x5a is returned
     // instead.
 
-    UByte byte;
-    UByte buffer[1];
-    UByte count;
-    UInteger tries;
+    UInt8 byte;
+    UInt8 buffer[1];
+    UInt8 count;
+    UInt32 tries;
 
     // Try for a while to get the byte:
     byte = 0x5a;
@@ -68,8 +68,8 @@ UByte Robus__byte_get(
 
 void Robus__request_begin(
   Robus robus,
-  UByte address,
-  UByte command)
+  UInt8 address,
+  UInt8 command)
 {
     // This routine will start a the output of a command to the {robus}
     // module at {address}.  The first byte of the command is {command}.
@@ -111,7 +111,7 @@ void Robus__request_flush(
     // response data that is needed.
 
     // Grab some values from {robus}:
-    UByte commands_length = robus->commands_length;
+    UInt8 commands_length = robus->commands_length;
     Buffer put_buffer = robus->put_buffer;
     Buffer get_buffer = robus->get_buffer;
     Uart1 uart1 = robus->uart1;
@@ -120,7 +120,7 @@ void Robus__request_flush(
     //Serial__string_put(debug, "Flush[");
 
     // Send as many request/response pairs as needed to clear {put_buffer}:
-    UByte put_buffer_count = put_buffer->count;
+    UInt8 put_buffer_count = put_buffer->count;
     while (put_buffer_count != 0) {
 	// Can we can clear out the entire buffer this pass?:
 	if (put_buffer_count <= 15) {
@@ -129,26 +129,26 @@ void Robus__request_flush(
 	}
 
 	// Output the request packet header:
-	UByte checksum = Buffer__checksum(put_buffer, commands_length);
-	UByte request_header = (commands_length << 4) | checksum;
-	Uart__frame_put(uart1, (UShort)request_header);
+	UInt8 checksum = Buffer__checksum(put_buffer, commands_length);
+	UInt8 request_header = (commands_length << 4) | checksum;
+	Uart__frame_put(uart1, (UInt16)request_header);
 
 	// Output the request packet data:
-	UByte index;
+	UInt8 index;
 	for (index = 0; index < commands_length; index++) {
-	    UByte ubyte = Buffer__ubyte_get(put_buffer);
-	    Uart__frame_put(uart1, (UShort)ubyte);
+	    UInt8 ubyte = Buffer__ubyte_get(put_buffer);
+	    Uart__frame_put(uart1, (UInt16)ubyte);
 	}
 	put_buffer_count -= commands_length;
 
 	// Wait for the response packet header:
-	UByte response_header = (Byte)Uart__frame_get(uart1);
-	UByte response_length = response_header >> 4;
+	UInt8 response_header = (Int8)Uart__frame_get(uart1);
+	UInt8 response_length = response_header >> 4;
 
 	// Read in the response packet data:
 	checksum = 0;
 	for (index = 0; index < response_length; index++) {
-	    UByte ubyte = (Byte)Uart__frame_get(uart1);
+	    UInt8 ubyte = (Int8)Uart__frame_get(uart1);
 	    checksum += ubyte;
 	    Buffer__ubyte_put(get_buffer, ubyte);
 	}
@@ -160,7 +160,7 @@ void Robus__request_flush(
 
 void Robus__request_ubyte_put(
   Robus robus,
-  UByte ubyte)
+  UInt8 ubyte)
 {
     // This routine will enter {ubyte} into the command put buffer for {robus}.
     // The byte should be the continuation of a multi-byte command.
@@ -175,17 +175,17 @@ void Robus__request_ubyte_put(
     }
 }
 
-//UByte Robus__command_byte_get(
+//UInt8 Robus__command_byte_get(
 //  Robus robus,
-//  UByte command)
+//  UInt8 command)
 //{
 //    // This routine will send {command} to the current selected Robus module
 //    // attached to {robus} and return the single byte response.
 //
-//    UByte tries;
-//    Byte result;
+//    UInt8 tries;
+//    Int8 result;
 //
-//    //UByte address = robus->address;
+//    //UInt8 address = robus->address;
 //    for (tries = 0; tries < 5; tries++) {
 //	// Send {command}:
 //	Robus__byte_put(robus, command);
@@ -206,8 +206,8 @@ void Robus__request_ubyte_put(
 //
 //void Robus__command_byte_put(
 //  Robus robus,
-//  UByte command,
-//  Byte byte)
+//  UInt8 command,
+//  Int8 byte)
 //{
 //    // This routine will send {command} to the currently selected Robus module
 //    // attached to {robus} followed by {byte}.
@@ -224,7 +224,7 @@ void Robus__initialize(
   Serial debug_serial,
   Buffer get_buffer,
   Buffer put_buffer,
-  UByte slave_address)
+  UInt8 slave_address)
 {
     // This routine will initialize {robus} data structure and stuff
     // {serial} into it.  The UART connect to the {robus}.
@@ -274,27 +274,27 @@ void Robus__initialize(
 
 void Robus__slave_process(
   Robus robus,
-  UByte (*process_routine)(void *, Robus, UByte, Logical),
+  UInt8 (*process_routine)(void *, Robus, UInt8, Bool8),
   void *object)
 {
-    //UByte transmit_buffer[16];
+    //UInt8 transmit_buffer[16];
 
-    UByte address = robus->address;
-    Logical address_match = (Logical)0;
+    UInt8 address = robus->address;
+    Bool8 address_match = (Bool8)0;
     Serial debug_serial = robus->debug_serial;
-    UByte echo_suppress = 0;
+    UInt8 echo_suppress = 0;
     Buffer get_buffer = robus->get_buffer;
     Buffer put_buffer = robus->put_buffer;
-    const Logical trace = (Logical)0;
+    const Bool8 trace = (Bool8)0;
     Uart1 uart1 = robus->uart1;
-    Integer receive_length = -1;
-    UByte desired_checksum = 0;
+    Int32 receive_length = -1;
+    UInt8 desired_checksum = 0;
 
     while (1) {
 	// Check that there is a data available in {uart1}.  Stash the LSR
 	// (Line Status Register) into a local variable because reading
 	// the LSR clears all of the error bits:
-	UInteger lsr = uart1->LSR;
+	UInt32 lsr = uart1->LSR;
 	if ((lsr & UART_LSR_RDR) != 0) {
 	    Frame frame = (Frame)0;
 
@@ -315,7 +315,7 @@ void Robus__slave_process(
 	    // For debugging, output the received character:
 	    if (trace) {
 		// With a new frame; start on a new line:
-		Character prefix = ' ';
+		Char8 prefix = ' ';
 	        if ((frame & 0x100) != 0) {
 		    prefix = '\n';
 	        }
@@ -331,7 +331,7 @@ void Robus__slave_process(
 	        // Deal with address.  In address match mode, the address
 	        // will always match.
 	        address_match =
-		  (Logical)((UByte)(frame & 0xff) == address);
+		  (Bool8)((UInt8)(frame & 0xff) == address);
 		Buffer__reset(get_buffer);
 		echo_suppress = 0;
 
@@ -350,7 +350,7 @@ void Robus__slave_process(
 		    }
 		} else {
 		    // We have a byte to put into the receive buffer:
-		    UByte receive_byte = (UByte)(frame & 0xff);
+		    UInt8 receive_byte = (UInt8)(frame & 0xff);
 		    if (receive_length < 0) {
 			// Have a byte that contains length and checksum:
 			receive_length = receive_byte >> 4;
@@ -376,7 +376,7 @@ void Robus__slave_process(
 			    // We have a complete message:
 			    Buffer__save_end_set(get_buffer);
 
-			    UByte actual_checksum =
+			    UInt8 actual_checksum =
 			      Buffer__checksum(get_buffer, receive_length);
 			    if (desired_checksum != actual_checksum) {
 				// Checksum error; respond with error byte:
@@ -386,8 +386,8 @@ void Robus__slave_process(
 				}
 			    } else {
 				// The checksums match, process the commands:
-				UByte errors = 0;
-				UByte pass;
+				UInt8 errors = 0;
+				UInt8 pass;
 				Buffer__reset(put_buffer);
 
 				// Pass through the buffer twice.  The first
@@ -403,11 +403,11 @@ void Robus__slave_process(
 				    }
 
 				    Buffer__save_restore(get_buffer);
-				    Logical execute = (Logical)(pass == 1);
+				    Bool8 execute = (Bool8)(pass == 1);
 
 				    // Keep processing commands until done:
 				    while (Buffer__remaining(get_buffer) != 0) {
-					UByte command =
+					UInt8 command =
 					   Buffer__ubyte_get(get_buffer);
 					errors += process_routine(object,
 					  robus, command, execute);
@@ -430,11 +430,11 @@ void Robus__slave_process(
 				    // No errors, send the result back:
 
 				    // Compute and send header byte:
-				    UByte send_size =
+				    UInt8 send_size =
 				      Buffer__remaining(put_buffer);
-				    UByte send_checksum =
+				    UInt8 send_checksum =
 				      Buffer__checksum(put_buffer, send_size);
-				    UByte header_byte =
+				    UInt8 header_byte =
 				      (send_size << 4) | send_checksum;
 				    Uart__frame_put(uart1, header_byte);
 				    echo_suppress = 1;
@@ -448,10 +448,10 @@ void Robus__slave_process(
 
 				    // Send rest of results:
 				    echo_suppress += send_size;
-				    UByte index;
+				    UInt8 index;
 				    for (index = 0;
 				      index < send_size; index++) {
-					UByte ubyte = 
+					UInt8 ubyte = 
 					  Buffer__ubyte_get(put_buffer);
 				        Uart__frame_put(uart1, ubyte);
 
@@ -492,7 +492,7 @@ void Robus__slave_process(
     }
 }
 
-UByte Robus__ubyte_get(
+UInt8 Robus__ubyte_get(
   Robus robus)
 {
     // This routine will get the next response byte from {robus}.

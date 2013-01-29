@@ -2,17 +2,17 @@
 
 #include "trace.h"
 
-UShort trace_buffer[TRACE_SIZE];
-UShort trace_index = 0;
+UInt16 trace_buffer[TRACE_SIZE];
+UInt16 trace_index = 0;
 
 void trace_dump(
   Serial serial)
 {
-    Integer index = 0;
+    Int32 index = 0;
     for (index = 0; index < TRACE_SIZE; index++) {
         // Fetch the {trace} value and clear it out of the trace buffer:
-	UInteger masked_index = (index + trace_index) & TRACE_MASK;
-	UInteger trace = trace_buffer[masked_index];
+	UInt32 masked_index = (index + trace_index) & TRACE_MASK;
+	UInt32 trace = trace_buffer[masked_index];
 	trace_buffer[masked_index] = 0;
 
 	// Show any tracing flags:

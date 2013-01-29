@@ -35,14 +35,14 @@ void Uart__frame_put(
 {
     // This routine will send {frame} to the to {uart}.
     // The echo byte from sending {byte} is read back.
-    UByte buffer[1];
+    UInt8 buffer[1];
 
     // Send {byte} to {robus}:
     if ((frame & 0x100) != 0) {
 	// Set 9th bit here:
 	(void)UART_RS485SendSlvAddr(uart1, frame);
     } else {
-	buffer[0] = (UByte)frame;
+	buffer[0] = (UInt8)frame;
 	(void)UART_RS485SendData(uart1, buffer, 1);
     }
 
@@ -52,17 +52,17 @@ void Uart__frame_put(
     //(void)Uart__frame_get(uart1);
 }
 
-UShort Uart__frame_get(
+UInt16 Uart__frame_get(
   Uart1 uart1)
 {
     // This routine will get one byte of response Robus bus attached to {robus}.
     // If no byte is found after a resonable amount of time, 0x5a is returned
     // instead.
 
-    UShort frame;
-    UByte buffer[1];
-    UByte count;
-    UByte tries;
+    UInt16 frame;
+    UInt8 buffer[1];
+    UInt8 count;
+    UInt8 tries;
 
     // Try for a while to get the byte:
     frame = 0x5a;
@@ -90,7 +90,7 @@ UShort Uart__frame_get(
 // This routine will process {line_flags} for {uart}.
 void uart_interrupt_error(
   Uart uart,
-  UInteger line_flags)
+  UInt32 line_flags)
 {
     // Loop forever:
     while (1) {

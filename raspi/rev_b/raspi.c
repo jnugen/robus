@@ -16,25 +16,25 @@ typedef struct Discovery__Struct *Discovery;
 #define DISCOVERY_LOW_ADDRESS_START 0
 #define DISCOVERY_HIGH_ADDRESS_START 0x80
 struct Discovery__Struct {
-    UByte low_address;		// Next low address to allocate
-    UByte high_address;		// Next high address to allocate
-    Logical stack[DISCOVERY_TOTAL_BITS]; // Stack to work with
-    Integer top;		// Current valid top bit in stack
+    UInt8 low_address;		// Next low address to allocate
+    UInt8 high_address;		// Next high address to allocate
+    Bool8 stack[DISCOVERY_TOTAL_BITS]; // Stack to work with
+    Int32 top;		// Current valid top bit in stack
     Uart uart_8bit;		// 8-bit UART (up stream)
     Uart uart_9bit;		// 9-bit UART (for bus)
 } Discovery__one_and_only__struct;
 Discovery Discovery__one_and_only = &Discovery__one_and_only__struct;
 
 // {Discovery} routines:
-void Discovery__byte_send(Discovery discovery, UByte ubyte);
-void Discovery__hex_send(Discovery discovery, UByte uart_8bit);
+void Discovery__byte_send(Discovery discovery, UInt8 ubyte);
+void Discovery__hex_send(Discovery discovery, UInt8 uart_8bit);
 void Discovery__initialize(Discovery discovery, Uart uart8_bit, Uart uart9_bit);
 void Discovery__scan(Discovery discovery);
-void Discovery__stack_send(Discovery discovery, UByte *stack);
+void Discovery__stack_send(Discovery discovery, UInt8 *stack);
 
 //#define BLINKY 1
 
-Integer main(void)
+Int32 main(void)
 {
 #ifdef BLINKY
     // The code below blinks the LED:
@@ -82,8 +82,8 @@ Integer main(void)
 
     // Initialize the "console" UART to 115200 bps, using alternate function 1
     // on P0.2(TXD0) or P0.3(RXD0):
-    Byte interrupt_number = UART0_IRQn;
-    interrupt_number = (Byte)-1;	// Disable interrupts
+    Int8 interrupt_number = UART0_IRQn;
+    interrupt_number = (Int8)-1;	// Disable interrupts
     Serial console = Serial__initialize(&Serial__uart0,
       (Uart)LPC_UART0, 115200, 1, 0, 2, 3, interrupt_number, 0x01, 0);
 
@@ -103,7 +103,7 @@ Integer main(void)
     Frame high_bits = (Frame)-1;
     Frame frame8_out = (Frame)-1;
     Frame frame9_out = (Frame)-1;
-    Logical echo_surpress = (Logical)0;
+    Bool8 echo_surpress = (Bool8)0;
 
     Discovery discovery = Discovery__one_and_only;
     Discovery__initialize(discovery, uart_8bit, uart_9bit);
@@ -125,7 +125,7 @@ Integer main(void)
 		// Reset the bus by sending break for 1ms:
 
 		// Start the break:
-		UInteger lcr_save = uart_9bit->LCR & UART_LCR_BITMASK;
+		UInt32 lcr_save = uart_9bit->LCR & UART_LCR_BITMASK;
 		uart_9bit->LCR = lcr_save | UART_LCR_BREAK_EN;
 
 		// Wait for 10 milliseconds, to trigger reset:
@@ -163,7 +163,7 @@ Integer main(void)
 
 	    // Deal with echo surpression:
 	    if (echo_surpress) {
-		echo_surpress = (Logical)0;
+		echo_surpress = (Bool8)0;
 	    } else {
 		// See about forwarding it along:
 		frame8_out = frame9_in;
@@ -178,11 +178,11 @@ Integer main(void)
 
 	    // Read out the current LCR into a local value, masking off
 	    // any bits that we are not supposed to look at:
-	    UInteger current_lcr = uart_9bit->LCR & UART_LCR_BITMASK;
+	    UInt32 current_lcr = uart_9bit->LCR & UART_LCR_BITMASK;
 
 	    // {UART_LCR_PARITY_F_0} = 3<<4 which will mask out the two
 	    // bits used to represent the parity mode:
-	    UInteger desired_lcr = current_lcr & ~UART_LCR_PARITY_F_0;
+	    UInt32 desired_lcr = current_lcr & ~UART_LCR_PARITY_F_0;
 
 	    // Now compute the desired LCR value based on the 9th bit
 	    // of {frame9_out}:
@@ -209,7 +209,7 @@ Integer main(void)
 		uart_9bit->THR = frame9_out & UART_THR_MASKBIT;
 
 		// Suppress the half duplex bus echo:
-		echo_surpress = (Logical)1;
+		echo_surpress = (Bool8)1;
 
 		// Remember {frame9_out} has been sent:
 		frame9_out = (Frame)-1;
@@ -241,35 +241,35 @@ void Discovery__initialize(
 void Discovery__scan(
   Discovery discovery)
 {
-    static UByte stack1[13] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
-    static UByte stack2[13] = {13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+    static UInt8 stack1[13] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+    static UInt8 stack2[13] = {13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
 
     Discovery__stack_send(discovery, stack1);
     Discovery__stack_send(discovery, stack2);
     Discovery__stack_send(discovery, stack1);
 
-    Discovery__byte_send(discovery, (UByte)'!');
-    Discovery__byte_send(discovery, (UByte)'\n');
+    Discovery__byte_send(discovery, (UInt8)'!');
+    Discovery__byte_send(discovery, (UInt8)'\n');
 }
 
 void Discovery__stack_send(
   Discovery discovery,
-  UByte *stack)
+  UInt8 *stack)
 {
-    UByte index;
+    UInt8 index;
 
-    Discovery__byte_send(discovery, (UByte)'@');
+    Discovery__byte_send(discovery, (UInt8)'@');
     for (index = 0; index < 13; index++) {
 	Discovery__hex_send(discovery, stack[index]);
     }
-    Discovery__byte_send(discovery, (UByte)'\n');
+    Discovery__byte_send(discovery, (UInt8)'\n');
 }
 
 void Discovery__hex_send(
   Discovery discovery,
-  UByte ubyte)
+  UInt8 ubyte)
 {
-    static Character nibble[] = "0123456789abcdef";
+    static Char8 nibble[] = "0123456789abcdef";
 
     ubyte &= 0xff;
     Discovery__byte_send(discovery, nibble[ubyte >> 4]);
@@ -278,7 +278,7 @@ void Discovery__hex_send(
 
 void Discovery__byte_send(
   Discovery discovery,
-  UByte ubyte)
+  UInt8 ubyte)
 {
     Uart uart_8bit = discovery->uart_8bit;
 
@@ -293,8 +293,8 @@ void Discovery__byte_send(
 
 // This routine is called whenever an check macro fails.
 void check_failed(
-  UByte *file,
-  UInteger line)
+  UInt8 *file,
+  UInt32 line)
 {
     // User can add his own implementation to report the file name and
     // line number, example:

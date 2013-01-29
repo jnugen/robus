@@ -12,42 +12,35 @@
 typedef struct Motor3__Struct *Motor3;
 
 struct Motor3__Struct {
-    Byte speed;			// Signed motor speed
-    Logical direction_invert;	// Invert motor speed sign
+    Int8 speed;			// Signed motor speed
+    Bool8 direction_invert;	// Invert motor speed sign
 };
 
 // {Motor3} routines:
 void Motor3__speed_update(Motor3 motor3, Serial debug_serial);
-UByte Motor3__process(void *motor3__pointer,
-   Robus robus, UByte command, Logical execute);
+UInt8 Motor3__process(void *motor3__pointer,
+   Robus robus, UInt8 command, Bool8 execute);
 
 // Main routines:
-Integer main(void);
-Integer c_entry(void);
-Integer abs(Integer value);
+Int32 main(void);
+Int32 abs(Int32 value);
 
 // Command parse routines:
 void command_id_show(Serial serial, Robus robus);
 void command_id_string_show(Serial serial, Robus robus);
-UByte command_id_byte_show(Serial serial, Robus robus);
+UInt8 command_id_byte_show(Serial serial, Robus robus);
 //void command_parse_navigate(Serial serial, Motor2 motor2, Shaft2 shaft2);
 
-// {Logical} stuff:
-const Logical Logical__true = (Logical)1;
-const Logical Logical__false = (Logical)0;
+// {Bool8} stuff:
+const Bool8 Bool8__true = (Bool8)1;
+const Bool8 Bool8__false = (Bool8)0;
 
 
 // Routine definitions from here on:
 
 // Most compilers programs start from main...:
 
-Integer main(void)
-{
-    return c_entry();
-}
-
-// ... but for some reason, we use c_entry instead:
-Integer c_entry(void)
+Int32 main(void)
 {
 #ifdef BLINKY
     if (1) {
@@ -97,8 +90,8 @@ Integer c_entry(void)
 
     // Initialize the "console" UART to 115200 bps, using alternate function 1
     // on P0.2(TXD0) or P0.3(RXD0):
-    Byte interrupt_number = UART0_IRQn;
-    interrupt_number = (Byte)-1;	// Disable interrupts
+    Int8 interrupt_number = UART0_IRQn;
+    interrupt_number = (Int8)-1;	// Disable interrupts
     Serial console = Serial__initialize(&Serial__uart0,
       (Uart)LPC_UART0, 115200, 1, 0, 2, 3, interrupt_number, 0x01, 0);
 
@@ -107,7 +100,7 @@ Integer c_entry(void)
     //  (Uart)LPC_UART3, 115200, 2, 0, 0, 1, UART3_IRQn, 0x04);
     //Serial__string_put(debug, "debug:\n");
 
-    UByte slave_address = 133;
+    UInt8 slave_address = 133;
     Robus robus = Robus__null;
     Robus__initialize(robus,
       console, Buffer__get_buffer, Buffer__put_buffer, slave_address);
@@ -123,7 +116,7 @@ Integer c_entry(void)
     struct Motor3__Struct motor3__struct;
     Motor3 motor3 = &motor3__struct;
     motor3->speed = 0;
-    motor3->direction_invert = (Logical)0;
+    motor3->direction_invert = (Bool8)0;
 
     motor_init();
     pwm_init();
@@ -140,10 +133,10 @@ void Motor3__speed_update(
   Motor3 motor3,
   Serial debug_serial)
 {
-    Byte speed = motor3->speed;
-    Logical direction_invert = motor3->direction_invert;
+    Int8 speed = motor3->speed;
+    Bool8 direction_invert = motor3->direction_invert;
 
-    Integer pwm = 0;
+    Int32 pwm = 0;
     if (debug_serial != (Serial)0) {
 	Serial__character_put(debug_serial, ' ');
 	Serial__character_put(debug_serial, 'S');
@@ -158,10 +151,10 @@ void Motor3__speed_update(
 
     if (speed > 0) {
 	motor_forward();
-	pwm = (Integer)(speed << 1);
+	pwm = (Int32)(speed << 1);
     } else if (speed < 0) {
 	motor_reverse();
-        pwm = (Integer)((-speed) << 1);
+        pwm = (Int32)((-speed) << 1);
     } else {
 	motor_stop();
     }
@@ -174,17 +167,17 @@ void Motor3__speed_update(
     pwm_update(pwm);
 }
 
-UByte Motor3__process(
+UInt8 Motor3__process(
   void *motor3_pointer,
   Robus robus,
-  UByte command,
-  Logical execute)
+  UInt8 command,
+  Bool8 execute)
 {
-    UByte errors = 0;
+    UInt8 errors = 0;
     Motor3 motor3 = (Motor3)motor3_pointer;
     Buffer get_buffer = robus->get_buffer;
     Buffer put_buffer = robus->put_buffer;
-    UByte remaining = Buffer__remaining(get_buffer);
+    UInt8 remaining = Buffer__remaining(get_buffer);
     Serial debug_serial = robus->debug_serial;
     debug_serial = (Serial)0;
 
@@ -192,7 +185,7 @@ UByte Motor3__process(
       case 0:
 	// Speed get:
 	if (execute) {
-	    Buffer__ubyte_put(put_buffer, (UByte)motor3->speed);
+	    Buffer__ubyte_put(put_buffer, (UInt8)motor3->speed);
 	}
 	break;
       case 1:
@@ -200,7 +193,7 @@ UByte Motor3__process(
 	if (remaining == 0) {
 	    errors = 1;
 	} else {
-	    Byte speed = (Byte)Buffer__ubyte_get(get_buffer);
+	    Int8 speed = (Int8)Buffer__ubyte_get(get_buffer);
 	    if (execute) {
 		motor3->speed = speed;
 		Motor3__speed_update(motor3, debug_serial);
@@ -210,7 +203,7 @@ UByte Motor3__process(
       case 2:
 	// Direction Invert get:
 	if (execute) {
-	    Buffer__ubyte_put(put_buffer, (UByte)motor3->direction_invert);
+	    Buffer__ubyte_put(put_buffer, (UInt8)motor3->direction_invert);
 	}
 	break;
       case 3:
@@ -218,8 +211,8 @@ UByte Motor3__process(
 	if (remaining == 0) {
 	    errors = 1;
 	} else {
-	    Logical direction_invert =
-	      (Logical)(Buffer__ubyte_get(get_buffer) != 0);
+	    Bool8 direction_invert =
+	      (Bool8)(Buffer__ubyte_get(get_buffer) != 0);
 	    if (execute) {
 		motor3->direction_invert = direction_invert;
 		Motor3__speed_update(motor3, debug_serial);
@@ -242,8 +235,8 @@ UByte Motor3__process(
 #ifdef  DEBUG
 // This routine is called whenever an check macro fails.
 void check_failed(
-  UByte *file,
-  UInteger line)
+  UInt8 *file,
+  UInt32 line)
 {
     // User can add his own implementation to report the file name and
     // line number, example:

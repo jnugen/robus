@@ -15,9 +15,9 @@ Ring_Buffer Ring_Buffer__initialize(
     return ring_buffer;
 }
 
-Logical Ring_Buffer__is_empty(Ring_Buffer ring_buffer)
+Bool8 Ring_Buffer__is_empty(Ring_Buffer ring_buffer)
 {
-    UByte result;
+    UInt8 result;
 
     result = 0;
     if ((ring_buffer->head & RING_BUFFER__MASK) ==
@@ -34,10 +34,10 @@ void Ring_Buffer__head_increment(
 }
 
 // This routine will return 1 if {ring_buffer} is full, and 0 otherise.
-UByte Ring_Buffer__is_full(
+UInt8 Ring_Buffer__is_full(
   Ring_Buffer ring_buffer)
 {
-    UByte result;
+    UInt8 result;
 
     result = 0;
     if ((ring_buffer->tail & RING_BUFFER__MASK) ==

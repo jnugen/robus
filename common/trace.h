@@ -10,8 +10,8 @@
 #define TRACE_BITS 7
 #define TRACE_SIZE (1 << TRACE_BITS)
 #define TRACE_MASK (TRACE_SIZE - 1)
-extern UShort trace_buffer[];
-extern UShort trace_index;
+extern UInt16 trace_buffer[];
+extern UInt16 trace_index;
 #define TRACE(byte) trace_buffer[trace_index++ & TRACE_MASK] = byte
 //#define TRACE(byte) // do nothing
 

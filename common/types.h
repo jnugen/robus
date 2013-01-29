@@ -8,14 +8,18 @@
 #include <stdint.h>
 
 // Scalar typedef's with first letter capitalized:
-typedef int8_t Byte;
-typedef char Character;
-typedef float Float;
-typedef int32_t Integer;
-typedef uint8_t Logical;
-typedef int16_t Short;
-typedef uint8_t UByte;
-typedef uint32_t UInteger;
-typedef uint16_t UShort;
+typedef uint8_t Bool8;		// 8-bit boolean
+typedef char Char8;		// 8-bit character
+typedef uint16_t Char16;	// 16-bit chracter
+typedef float Float32;		// 32-bit float
+typedef double Float64;		// 64-bit flaot
+typedef int8_t Int8;		// 8-bit signed integer (i.e. signed byte)
+typedef int16_t Int16;		// 16-bit signed integer (i.e. signed short)
+typedef int32_t Int32;		// 32-bit signed integer
+typedef int64_t Int64;		// 64-bit signed integer
+typedef uint8_t UInt8;		// 8-bit unsigned integer (i.e. unsigned byte)
+typedef uint16_t UInt16;	// 16-bit unsigned integer (i.e. unsigned short)
+typedef uint32_t UInt32;	// 32-bit unsigned integer
+typedef uint64_t UInt64;	// 64-bit unsigned integer
 
 #endif // TYPES_H_INCLUDED

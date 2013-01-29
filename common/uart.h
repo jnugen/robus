@@ -14,11 +14,11 @@ typedef struct LPC_UART1__Struct *Uart1;
 // A frame contains 9-bits of data and potentially some other flags
 // from the UART receive FIFE.  We use a signed value so that a negative
 // value can indicate "no frame received".
-typedef Short Frame;
+typedef Int16 Frame;
 
 // {Uart} routines:
 void Uart__frame_put(Uart1 uart1, Frame frame);
-UShort Uart__frame_get(Uart1 uart1);
+UInt16 Uart__frame_get(Uart1 uart1);
 
 // Define all four UART interrupt handlers regardless of whether
 // or not they actually get implemented:
@@ -27,7 +27,7 @@ void UART1_IRQHandler(void);
 void UART2_IRQHandler(void);
 void UART3_IRQHandler(void);
 
-void uart_interrupt_error(Uart uart, UInteger line_flags);
-volatile Logical uart_transmit_interrupt_status;
+void uart_interrupt_error(Uart uart, UInt32 line_flags);
+volatile Bool8 uart_transmit_interrupt_status;
 
 #endif // UART_H_INCLUDED

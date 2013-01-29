@@ -10,15 +10,15 @@ struct Buffer__Struct Buffer__put_buffer_struct;
 Buffer Buffer__get_buffer = &Buffer__get_buffer_struct;
 Buffer Buffer__put_buffer = &Buffer__put_buffer_struct;
 
-UByte Buffer__checksum(
+UInt8 Buffer__checksum(
   Buffer buffer,
-  UByte count)
+  UInt8 count)
 {
     // This routine will return the 4-bit checksum of the first {count}
     // bytes in {buffer}.
 
-    UByte checksum = 0;
-    UByte index = buffer->get_index;
+    UInt8 checksum = 0;
+    UInt8 index = buffer->get_index;
     while (count != 0) {
 	checksum += buffer->ubytes[index++ & BUFFER_MASK];
 	count--;
@@ -40,7 +40,7 @@ void Buffer__reset(
     buffer->save_index = 0;
 }
 
-UByte Buffer__remaining(
+UInt8 Buffer__remaining(
   Buffer buffer)
 {
     // This routine will return the number of remaining bytes in {buffer}.
@@ -73,7 +73,7 @@ void Buffer__save_start_set(
     buffer->save_index = buffer->get_index;
 }
 
-UByte Buffer__ubyte_get(
+UInt8 Buffer__ubyte_get(
   Buffer buffer)
 {
     // This routine will return the next byte from {buffer}:
@@ -84,7 +84,7 @@ UByte Buffer__ubyte_get(
 
 void Buffer__ubyte_put(
   Buffer buffer,
-  UByte ubyte)
+  UInt8 ubyte)
 {
     // This routine will enter {byte} into buffer:
 

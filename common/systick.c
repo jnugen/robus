@@ -4,6 +4,8 @@
 
 // SysTick routines:
 
+volatile UInt32 SysTickCnt;
+
 // This interrupt routine will increment {SysTickCnt} every millisecond.
 void SysTick_Handler (void) {
     SysTickCnt++;
@@ -11,9 +13,9 @@ void SysTick_Handler (void) {
 
 // This routine will delay for {ms} milliseconds.
 void SysTick__delay (
-  unsigned long ms)
+  UInt32 ms)
 {
-    unsigned long sys_tick_count;
+    UInt32 sys_tick_count;
 
     // Get current value:
     sys_tick_count = SysTickCnt;
