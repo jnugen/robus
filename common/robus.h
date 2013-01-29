@@ -20,7 +20,7 @@ struct Robus__Struct {
     Serial debug_serial;	// Debugging serial
     Buffer get_buffer;		// Buffer of received bytes
     Buffer put_buffer;		// Buffer of bytes to send
-    Uart1 uart1;		// UART for data sending
+    struct LPC_UART1__Struct *uart1; // UART for data sending
 };
 
 // {Robus} data structures:

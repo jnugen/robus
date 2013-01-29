@@ -24,6 +24,9 @@ COMMON_DIR := $(PROJECT_ROOT)/common
 # The cmsis directory vendor supplied library of code that can be used
 # to access processor peripherals:
 CMSIS_DIR := $(PROJECT_ROOT)/cmsis
+CMSIS_LPC17XX_DIR := $(CMSIS_DIR)/lpc17xx
+CMSIS_LPC17XX_DRIVERS := $(CMSIS_LPC17XX_DIR)/Drivers/source
+CMSIS_LPC17XX_CORE := $(CMSIS_LPC17XX_DIR)/Core/CM3/DeviceSupport/NXP/LPC17xx
 
 # Selecting Cortex Core:
 CORTEX_M := 3
@@ -36,8 +39,9 @@ ARCH_FLAGS := \
 
 # Compiler #include path:
 INCLUDES := \
-    -I$(CMSIS_DIR)/drivers/include \
-    -I$(CMSIS_DIR)/core/include \
+    -I$(CMSIS_LPC17XX_DIR)/Core/CM3/CoreSupport \
+    -I$(CMSIS_LPC17XX_DIR)/Core/CM3/DeviceSupport/NXP/LPC17xx \
+    -I$(CMSIS_LPC17XX_DIR)/Drivers/include \
     -I$(COMMON_DIR) \
     -I.
 
@@ -84,6 +88,7 @@ CMSIS_FLAGS := \
 # Make sure that we find the required scripts:
 LD_SCRIPTS := -L$(COMMON_DIR) -T gcc_cortex_m3.ld
 LINK_FLAGS := \
+    ${ARCH_FLAGS} \
     $(LD_SCRIPTS) \
     $(USE_NANO) \
     $(USE_NOHOST) \
@@ -117,26 +122,26 @@ COMMON_OBJECTS := \
 startup_ARMCM3.o: $(COMMON_DIR)/startup_ARM$(CORE).S
 	$(CC) -c -o $@ $^ ${C_FLAGS} ${AS_FLAGS}
 
-system_LPC17xx.o: $(CMSIS_DIR)/core/system_LPC17xx.c
+system_LPC17xx.o: $(CMSIS_LPC17XX_CORE)/system_LPC17xx.c
 	$(CC) -c -o $@ $^ ${C_FLAGS} ${AS_FLAGS}
 
 # Rules to build CMSIS object files:
-lpc17xx_clkpwr.o: $(CMSIS_DIR)/drivers/src/lpc17xx_clkpwr.c
+lpc17xx_clkpwr.o: $(CMSIS_LPC17XX_DRIVERS)/lpc17xx_clkpwr.c
 	$(CC) -c -o $@ $^ ${C_FLAGS} ${CMSIS_FLAGS}
 
-lpc17xx_gpio.o: $(CMSIS_DIR)/drivers/src/lpc17xx_gpio.c
+lpc17xx_gpio.o: $(CMSIS_LPC17XX_DRIVERS)/lpc17xx_gpio.c
 	$(CC) -c -o $@ $^ ${C_FLAGS} ${CMSIS_FLAGS}
 
-lpc17xx_nvic.o: $(CMSIS_DIR)/drivers/src/lpc17xx_nvic.c
+lpc17xx_nvic.o: $(CMSIS_LPC17XX_DRIVERS)/lpc17xx_nvic.c
 	$(CC) -c -o $@ $^ ${C_FLAGS} ${CMSIS_FLAGS}
 
-lpc17xx_pinsel.o: $(CMSIS_DIR)/drivers/src/lpc17xx_pinsel.c
+lpc17xx_pinsel.o: $(CMSIS_LPC17XX_DRIVERS)/lpc17xx_pinsel.c
 	$(CC) -c -o $@ $^ ${C_FLAGS} ${CMSIS_FLAGS}
 
-lpc17xx_pwm.o: $(CMSIS_DIR)/drivers/src/lpc17xx_pwm.c
+lpc17xx_pwm.o: $(CMSIS_LPC17XX_DRIVERS)/lpc17xx_pwm.c
 	$(CC) -c -o $@ $^ ${C_FLAGS} ${CMSIS_FLAGS}
 
-lpc17xx_uart.o: $(CMSIS_DIR)/drivers/src/lpc17xx_uart.c
+lpc17xx_uart.o: $(CMSIS_LPC17XX_DRIVERS)/lpc17xx_uart.c
 	$(CC) -c -o $@ $^ ${C_FLAGS} ${CMSIS_FLAGS}
 
 # Rules to build common object files:
