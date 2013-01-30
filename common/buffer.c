@@ -92,3 +92,21 @@ void Buffer__ubyte_put(
     buffer->ubytes[buffer->put_index++ & BUFFER_MASK] = ubyte;
 }
 
+Int32 Buffer__int32_get(
+  Buffer buffer)
+{
+    // This routine will return the next byte from {buffer}:
+
+    return 0x01234567;
+}
+
+void Buffer__int32_put(
+  Buffer buffer,
+  Int32 int32)
+{
+    // This routine will enter {byte} into buffer:
+
+    //buffer->count++;
+    //buffer->ubytes[buffer->put_index++ & BUFFER_MASK] = ubyte;
+}
+

@@ -22,7 +22,7 @@ In .../Core/CM3/DeviceSupport/NXP/LPC17xx/LPC17xxh:
     Change 2:
 	#define PCLKSEL1_Val          0x00000000
 		=>
-	#define PCLKSEL1_Val          (3<<10)
+	#define PCLKSEL1_Val          (3<<10)|(1<<0)
 
     Change 3:
 	#define FLASH_SETUP 0
@@ -33,4 +33,16 @@ In .../Core/CM3/DeviceSupport/NXP/LPC17xx/LPC17xxh:
 	#define XTAL (12000000UL)
 	    =>
 	#define XTAL (20000000UL)
+
+3) In cmsis/lpc17xx/Drivers/source/lpc17xx_qei.c:
+
+   In QEI_Init():
+   Change 1:
+	Commented out the call to CLKPWR_SetPCLKDiv
+
+   Change 2:
+	Commented out the QEI_CON_RESI term for QEIx->QEICON
+
+   Change 3:
+	Changed QEIx->QEIMAXPOS value from 0x00 to 0xFFFFFFFF
 

@@ -105,11 +105,11 @@ void QEI_Init(LPC_QEI_TypeDef *QEIx, QEI_CFG_Type *QEI_ConfigStruct)
 
 	/* As default, peripheral clock for QEI module
 	 * is set to FCCLK / 2 */
-	CLKPWR_SetPCLKDiv(CLKPWR_PCLKSEL_QEI, CLKPWR_PCLKSEL_CCLK_DIV_1);
+	//CLKPWR_SetPCLKDiv(CLKPWR_PCLKSEL_QEI, CLKPWR_PCLKSEL_CCLK_DIV_1);
 
 	// Reset all remaining value in QEI peripheral
-	QEIx->QEICON = QEI_CON_RESP | QEI_CON_RESV | QEI_CON_RESI;
-	QEIx->QEIMAXPOS = 0x00;
+	QEIx->QEICON = QEI_CON_RESP | QEI_CON_RESV; // | QEI_CON_RESI;
+	QEIx->QEIMAXPOS = 0xFFFFFFFF;
 	QEIx->CMPOS0 = 0x00;
 	QEIx->CMPOS1 = 0x00;
 	QEIx->CMPOS2 = 0x00;

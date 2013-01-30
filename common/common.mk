@@ -106,6 +106,7 @@ CMSIS_OBJECTS := \
     lpc17xx_gpio.o \
     lpc17xx_pinsel.o \
     lpc17xx_pwm.o \
+    lpc17xx_qei.o \
     lpc17xx_uart.o
 
 # Common objects:
@@ -139,6 +140,9 @@ lpc17xx_pinsel.o: $(CMSIS_LPC17XX_DRIVERS)/lpc17xx_pinsel.c
 	$(CC) -c -o $@ $^ ${C_FLAGS} ${CMSIS_FLAGS}
 
 lpc17xx_pwm.o: $(CMSIS_LPC17XX_DRIVERS)/lpc17xx_pwm.c
+	$(CC) -c -o $@ $^ ${C_FLAGS} ${CMSIS_FLAGS}
+
+lpc17xx_qei.o: $(CMSIS_LPC17XX_DRIVERS)/lpc17xx_qei.c
 	$(CC) -c -o $@ $^ ${C_FLAGS} ${CMSIS_FLAGS}
 
 lpc17xx_uart.o: $(CMSIS_LPC17XX_DRIVERS)/lpc17xx_uart.c

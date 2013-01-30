@@ -34,5 +34,7 @@ void Buffer__save_start_set(Buffer buffer);
 void Buffer__reset(Buffer buffer);
 void Buffer__ubyte_put(Buffer buffer, UInt8 ubyte);
 UInt8 Buffer__ubyte_get(Buffer buffer);
+void Buffer__int32_put(Buffer buffer, Int32 int32);
+Int32 Buffer__int32_get(Buffer buffer);
 
 #endif // BUFFER_H_INCLUDED

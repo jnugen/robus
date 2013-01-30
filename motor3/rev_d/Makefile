@@ -12,6 +12,7 @@ OBJECTS := \
     ${COMMON_OBJECTS} \
     motor.o \
     pwm.o \
+    qei.o \
     $(PROGRAM).o
 
 # Rule to build main program object file:
@@ -22,6 +23,9 @@ motor.o: motor.c
 	$(CC) -c -o $@ $^ ${C_FLAGS}
 
 pwm.o: pwm.c
+	$(CC) -c -o $@ $^ ${C_FLAGS}
+
+qei.o: qei.c
 	$(CC) -c -o $@ $^ ${C_FLAGS}
 
 # Rule to build the .elf file (which is needed both for the debugger

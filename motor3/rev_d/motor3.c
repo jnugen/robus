@@ -120,6 +120,7 @@ Int32 main(void)
 
     motor_init();
     pwm_init();
+    qei_init();
 
     Robus__slave_process(robus, Motor3__process, (void *)motor3);
 
@@ -216,6 +217,22 @@ UInt8 Motor3__process(
 	    if (execute) {
 		motor3->direction_invert = direction_invert;
 		Motor3__speed_update(motor3, debug_serial);
+	    }
+	}
+	break;
+      case 4:
+	// Encoder get:
+	if (execute) {
+	    Buffer__int32_put(put_buffer, qei_read());
+	}
+	break;
+      case 5:
+	// Encoder set:
+	if (remaining == 0) {
+	    errors = 1;
+	} else {
+	    Int32 encoder = (Int32)Buffer__int32_get(get_buffer);
+	    if (execute) {
 	    }
 	}
 	break;

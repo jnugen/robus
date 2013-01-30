@@ -105,7 +105,7 @@
 //#define _USB_DMA
 
 /* QEI ------------------------------- */
-//#define _QEI
+#define _QEI
 
 /* MCPWM ------------------------------- */
 //#define _MCPWM
