@@ -97,7 +97,8 @@ Int32 Buffer__int32_get(
 {
     // This routine will return the next byte from {buffer}:
 
-    return 0x01234567;
+    buffer->count--;
+    return (Int32)buffer->ubytes[buffer->get_index++ & BUFFER_MASK];
 }
 
 void Buffer__int32_put(
@@ -106,7 +107,7 @@ void Buffer__int32_put(
 {
     // This routine will enter {byte} into buffer:
 
-    //buffer->count++;
-    //buffer->ubytes[buffer->put_index++ & BUFFER_MASK] = ubyte;
+    buffer->count++;
+    buffer->ubytes[buffer->put_index++ & BUFFER_MASK] = (UInt8)int32;
 }
 

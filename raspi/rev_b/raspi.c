@@ -36,6 +36,7 @@ void Discovery__stack_send(Discovery discovery, UInt8 *stack);
 
 Int32 main(void)
 {
+//#define BLINKY 1
 #ifdef BLINKY
     // The code below blinks the LED:
     if (1) {
