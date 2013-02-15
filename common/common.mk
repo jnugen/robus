@@ -13,6 +13,7 @@
 
 # Various locations in the ARM tools tree:
 ARM_TOOLS_BIN := $(ARM_TOOLS_ROOT)/bin
+LD := $(ARM_TOOLS_BIN)/arm-none-eabi-ld
 CC := $(ARM_TOOLS_BIN)/arm-none-eabi-gcc
 OBJCOPY := $(ARM_TOOLS_BIN)/arm-none-eabi-objcopy
 SIZE := $(ARM_TOOLS_BIN)/arm-none-eabi-size

@@ -8,7 +8,12 @@ include $(PROJECT_ROOT)/common/common.mk
 # The object files that make up the program:
 OBJECTS := \
     ${STARTUP_OBJECTS} \
-    ${CMSIS_OBJECTS} \
+    lpc17xx_clkpwr.o \
+    lpc17xx_gpio.o \
+    lpc17xx_pinsel.o \
+    lpc17xx_pwm.o \
+    lpc17xx_qei.o \
+    lpc17xx_uart.o \
     ${COMMON_OBJECTS} \
     motor.o \
     pwm.o \

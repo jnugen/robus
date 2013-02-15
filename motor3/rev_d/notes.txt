@@ -1,20 +1,10 @@
-Patches:
-1) U8 bridge pin 6 and 7
-2) U8 connect pin 5 to pin 8
-3) U7 cut power trace to pin 5
-4) U7 tracet to pin 6
-5) U7 bridge pins 6, 7 and 8
-6) U7 connect cut trace on pin 6 to pin 5
-
 Notes:
-1) Optoisolators are hooked up backwards
-2) Rotate N6 and move up behind N5.
-3) Make N3 a 1x8 connector; extend to right where N6 used to be
-   a) Add 3v3 to N3
-   b) Add Busy/Interrupt to N3
-4) Use Smaller crystal.
-	ABM3B-20.000MHZ-B2-T
-5) Do not run wires under crystal.
-6) Move N1 label so it is not obscured by U5
+1) MAX3051 is hooked to 5V instead of 3.3V.  Consider using
+   MCP2551 instead.
+2) Do not run wires under crystal?
+3) Move N1 label so it is not obscured by U5
+4) Add some more A/D lines to N3.
+5) Add an LED.
+:
 
 

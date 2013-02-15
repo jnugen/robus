@@ -186,7 +186,7 @@ UInt8 Motor3__process(
       case 0:
 	// Speed get:
 	if (execute) {
-	    Buffer__ubyte_put(put_buffer, (UInt8)motor3->speed);
+	    Buffer__int8_put(put_buffer, (Int8)motor3->speed);
 	}
 	break;
       case 1:
@@ -194,7 +194,7 @@ UInt8 Motor3__process(
 	if (remaining == 0) {
 	    errors = 1;
 	} else {
-	    Int8 speed = (Int8)Buffer__ubyte_get(get_buffer);
+	    Int8 speed = (Int8)Buffer__int8_get(get_buffer);
 	    if (execute) {
 		motor3->speed = speed;
 		Motor3__speed_update(motor3, debug_serial);
@@ -204,7 +204,7 @@ UInt8 Motor3__process(
       case 2:
 	// Direction Invert get:
 	if (execute) {
-	    Buffer__ubyte_put(put_buffer, (UInt8)motor3->direction_invert);
+	    Buffer__uint8_put(put_buffer, (UInt8)motor3->direction_invert);
 	}
 	break;
       case 3:
@@ -213,7 +213,7 @@ UInt8 Motor3__process(
 	    errors = 1;
 	} else {
 	    Bool8 direction_invert =
-	      (Bool8)(Buffer__ubyte_get(get_buffer) != 0);
+	      (Bool8)(Buffer__uint8_get(get_buffer) != 0);
 	    if (execute) {
 		motor3->direction_invert = direction_invert;
 		Motor3__speed_update(motor3, debug_serial);
@@ -221,18 +221,36 @@ UInt8 Motor3__process(
 	}
 	break;
       case 4:
+	// Encoder8 get:
+	if (execute) {
+	    Buffer__int8_put(put_buffer, (Int8)qei_read());
+	}
+	break;
+      case 5:
+	// Encoder8 set:
+	if (remaining == 0) {
+	    errors = 1;
+	} else {
+	    Int32 encoder = (Int32)Buffer__int8_get(get_buffer);
+	    if (execute) {
+		// Do something here:
+	    }
+	}
+	break;
+      case 6:
 	// Encoder get:
 	if (execute) {
 	    Buffer__int32_put(put_buffer, qei_read());
 	}
 	break;
-      case 5:
+      case 8:
 	// Encoder set:
 	if (remaining == 0) {
 	    errors = 1;
 	} else {
 	    Int32 encoder = (Int32)Buffer__int32_get(get_buffer);
 	    if (execute) {
+		// Do something here:
 	    }
 	}
 	break;

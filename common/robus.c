@@ -15,16 +15,14 @@ void Robus__byte_put(
 {
     // This routine will send {byte} to the Robus bus attached to {robus}.
     // The echo byte from sending {byte} is read back.
-    UInt8 buffer[1];
 
-    // Send {byte} to {robus}:
-    buffer[0] = byte;
-    (void)UART_RS485SendData(robus->uart1, buffer, 1);
+    Uart1 uart1 = robus->uart1;
+    Uart1__frame_put(uart1, byte);
 
     TRACE(byte | 0x200);
 
     // Read the echo back from {robus}:
-    if (Robus__byte_get(robus) != byte) {
+    if (Uart1__frame_get(uart1) != byte) {
 	//robus->errors++;
     }
 }
@@ -36,34 +34,15 @@ UInt8 Robus__byte_get(
     // If no byte is found after a resonable amount of time, 0x5a is returned
     // instead.
 
-    UInt8 byte;
-    UInt8 buffer[1];
-    UInt8 count;
-    UInt32 tries;
-
-    // Try for a while to get the byte:
-    byte = 0x5a;
-    for (tries = 0; tries < 20; tries++) {
-	// See if anything has come in yet:
-	count = UART_Receive((Uart)robus->uart1, buffer, 1, NONE_BLOCKING);
-	//count = UARTReceive(robus->uart, buffer, 1);
-	if (count == 1) {
-	    // We got a byte; return it:
-	    byte = buffer[0];
-	    TRACE(byte | 0x1000);
-	    return byte;
-	}
-
-	// FIXME!!! Is this necessary???
-	// Wait for a millisecond:
-	SysTick__delay(1);
+    UInt8 result = 0x5a;
+    Frame frame = Uart1__frame_get(robus->uart1);
+    if (frame >= 0) {
+	result = frame & 0xff;
     }
 
-    // We have timed out; return 0x5a:
-    //robus->errors++;
     TRACE(0x800 | 0x5a);
 
-    return 0x5a;
+    return result;
 }
 
 void Robus__request_begin(
@@ -247,9 +226,11 @@ void Robus__initialize(
 	  uart, 500000, 2, 2, 0, 1, UART1_IRQn, 0x1, slave_address);
     } else {
 	//// Enable UART Rx interrupt
-	//UART_IntConfig((LPC_UART_TypeDef *)LPC_UART1, UART_INTCFG_RBR, ENABLE);
+	//UART_IntConfig((LPC_UART_TypeDef *)LPC_UART1,
+	//   UART_INTCFG_RBR, ENABLE);
 	//// Enable UART line status interrupt
-	//UART_IntConfig((LPC_UART_TypeDef *)LPC_UART1, UART_INTCFG_RLS, ENABLE);
+	//UART_IntConfig((LPC_UART_TypeDef *)LPC_UART1,
+	//   UART_INTCFG_RLS, ENABLE);
 	//
 	//// preemption = 1, sub-priority = 1
 	//NVIC_SetPriority(UART1_IRQn, ((0x01<<3)|0x01));
@@ -262,11 +243,11 @@ void Robus__initialize(
 	//__BUF_RESET(rb.tx_tail);
     }
 
-    // Enable UART1 Transmit:
-    UART_TxCmd(uart, ENABLE);
+    // Enable {uart1} to transmit:
+    Uart1__transmit_enable(uart1, 1);
 
-    // Enble UART1 to Receive:
-    UART_RS485ReceiverCmd(uart1, ENABLE);
+    // Enble {uart1} to receive:
+    Uart1__receive_enable(uart1, 1);
 
     // Flush any garbage that came in:
     //Robus__quiesce(robus);
@@ -363,7 +344,7 @@ void Robus__slave_process(
 			}
 		    } else  {
 		        // Have a byte that that needs to be saved:
-			Buffer__ubyte_put(get_buffer, receive_byte);
+			Buffer__uint8_put(get_buffer, receive_byte);
 
 			if (trace) {
 			    Serial__character_put(debug_serial, 'X');
@@ -380,7 +361,7 @@ void Robus__slave_process(
 			      Buffer__checksum(get_buffer, receive_length);
 			    if (desired_checksum != actual_checksum) {
 				// Checksum error; respond with error byte:
-				Uart__frame_put(uart1, 0x1);
+				Uart1__frame_put(uart1, 0x1);
 				if (trace) {
 				    Serial__character_put(debug_serial, '!');
 				}
@@ -408,7 +389,7 @@ void Robus__slave_process(
 				    // Keep processing commands until done:
 				    while (Buffer__remaining(get_buffer) != 0) {
 					UInt8 command =
-					   Buffer__ubyte_get(get_buffer);
+					   Buffer__uint8_get(get_buffer);
 					errors += process_routine(object,
 					  robus, command, execute);
 					if (trace) {
@@ -436,7 +417,7 @@ void Robus__slave_process(
 				      Buffer__checksum(put_buffer, send_size);
 				    UInt8 header_byte =
 				      (send_size << 4) | send_checksum;
-				    Uart__frame_put(uart1, header_byte);
+				    Uart1__frame_put(uart1, header_byte);
 				    echo_suppress = 1;
 
 				    if (trace) {
@@ -452,8 +433,8 @@ void Robus__slave_process(
 				    for (index = 0;
 				      index < send_size; index++) {
 					UInt8 ubyte = 
-					  Buffer__ubyte_get(put_buffer);
-				        Uart__frame_put(uart1, ubyte);
+					  Buffer__uint8_get(put_buffer);
+				        Uart1__frame_put(uart1, ubyte);
 
 					if (trace) {
 					    Serial__character_put(debug_serial,
@@ -469,7 +450,7 @@ void Robus__slave_process(
 				} else {
 				    // There is an error; send an error result:
 				    echo_suppress = 1;
-				    Uart__frame_put(uart1, 0x3);
+				    Uart1__frame_put(uart1, 0x3);
 
 				    if (trace) {
 					Serial__character_put(debug_serial,

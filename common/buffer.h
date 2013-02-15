@@ -32,9 +32,15 @@ void Buffer__save_restore(Buffer buffer);
 void Buffer__save_end_set(Buffer buffer);
 void Buffer__save_start_set(Buffer buffer);
 void Buffer__reset(Buffer buffer);
-void Buffer__ubyte_put(Buffer buffer, UInt8 ubyte);
-UInt8 Buffer__ubyte_get(Buffer buffer);
+
+void Buffer__int8_put(Buffer buffer, Int8 int8);
+Int8 Buffer__int8_get(Buffer buffer);
 void Buffer__int32_put(Buffer buffer, Int32 int32);
 Int32 Buffer__int32_get(Buffer buffer);
+
+void Buffer__uint8_put(Buffer buffer, UInt8 uint8);
+UInt8 Buffer__uint8_get(Buffer buffer);
+void Buffer__uint32_put(Buffer buffer, UInt32 uint32);
+UInt32 Buffer__uint32_get(Buffer buffer);
 
 #endif // BUFFER_H_INCLUDED

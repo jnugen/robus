@@ -73,32 +73,30 @@ void Buffer__save_start_set(
     buffer->save_index = buffer->get_index;
 }
 
-UInt8 Buffer__ubyte_get(
+
+Int8 Buffer__int8_get(
   Buffer buffer)
 {
     // This routine will return the next byte from {buffer}:
 
-    buffer->count--;
-    return buffer->ubytes[buffer->get_index++ & BUFFER_MASK];
+    return (Int8)Buffer__uint8_get(buffer);
 }
 
-void Buffer__ubyte_put(
+void Buffer__int8_put(
   Buffer buffer,
-  UInt8 ubyte)
+  Int8 int8)
 {
     // This routine will enter {byte} into buffer:
 
-    buffer->count++;
-    buffer->ubytes[buffer->put_index++ & BUFFER_MASK] = ubyte;
+    Buffer__uint8_put(buffer, (UInt8)int8);
 }
 
 Int32 Buffer__int32_get(
   Buffer buffer)
 {
-    // This routine will return the next byte from {buffer}:
+    // This routine will return the next 32-bit signed integer from {buffer}:
 
-    buffer->count--;
-    return (Int32)buffer->ubytes[buffer->get_index++ & BUFFER_MASK];
+    return (Int32)Buffer__uint32_get(buffer);
 }
 
 void Buffer__int32_put(
@@ -107,7 +105,47 @@ void Buffer__int32_put(
 {
     // This routine will enter {byte} into buffer:
 
+    Buffer__uint32_put(buffer, (UInt32)int32);
+}
+
+
+UInt8 Buffer__uint8_get(
+  Buffer buffer)
+{
+    // This routine will return the next byte from {buffer}:
+
+    buffer->count--;
+    return buffer->ubytes[buffer->get_index++ & BUFFER_MASK];
+}
+
+void Buffer__uint8_put(
+  Buffer buffer,
+  UInt8 uint8)
+{
+    // This routine will enter {byte} into buffer:
+
     buffer->count++;
-    buffer->ubytes[buffer->put_index++ & BUFFER_MASK] = (UInt8)int32;
+    buffer->ubytes[buffer->put_index++ & BUFFER_MASK] = uint8;
+}
+
+UInt32 Buffer__uint32_get(
+  Buffer buffer)
+{
+    // This routine will return the next byte from {buffer}:
+
+    buffer->count--;
+    return (Int32)buffer->ubytes[buffer->get_index++ & BUFFER_MASK];
+}
+
+void Buffer__uint32_put(
+  Buffer buffer,
+  UInt32 uint32)
+{
+    // This routine will enter {byte} into buffer:
+
+    Buffer__uint8_put(buffer, (UInt8)(uint32 >> 24));
+    Buffer__uint8_put(buffer, (UInt8)(uint32 >> 16));
+    Buffer__uint8_put(buffer, (UInt8)(uint32 >> 8));
+    Buffer__uint8_put(buffer, (UInt8)(uint32 >> 0));
 }
 

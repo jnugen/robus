@@ -351,8 +351,9 @@ Serial Serial__initialize(
     // 				- FIFO_ResetRxBuf = ENABLE
     // 				- FIFO_ResetTxBuf = ENABLE
     // 				- FIFO_State = ENABLE
-    UART_FIFOConfigStructInit(&uart_fifo_config);
-    UART_FIFOConfig(uart, &uart_fifo_config);
+    //UART_FIFOConfigStructInit(&uart_fifo_config);
+    //UART_FIFOConfig(uart, &uart_fifo_config);
+    Uart__fifo_configure(uart, (Bool8)0, (Bool8)1, (Bool8)1, UART_FIFO_TRGLEV0);
 
     // Deal with special initialization needs of UART1:
     if (uart == (Uart)LPC_UART1) {
@@ -365,31 +366,55 @@ Serial Serial__initialize(
 	// - Multidrop mode is disable
 	// - Auto detect address is disabled
 	// - Receive state is enable
-	UART1_RS485_CTRLCFG_Type rs485_config;
+	//UART1_RS485_CTRLCFG_Type rs485_config;
 
-	rs485_config.AutoDirCtrl_State = ENABLE;
-	rs485_config.DirCtrlPin = UART1_RS485_DIRCTRL_DTR;
-	rs485_config.DirCtrlPol_Level = SET;
-	rs485_config.DelayValue = 0;
+ 	Uart1 uart1 = (Uart1)uart;
 	if (match_address == 0xff) {
-	    // Recieve everything on bus:
-	    rs485_config.NormalMultiDropMode_State = DISABLE;
-	    rs485_config.AutoAddrDetect_State = DISABLE;
-	    rs485_config.MatchAddrValue = 0;
-	    rs485_config.Rx_State = ENABLE;
+	    // Receive everything on bus:
+	    uart1__configure(uart1, 
+	      (Bool8)1, // Auto Direction Control
+	      (UInt8)UART1_RS485_DIRCTRL_DTR, // Direction control pin
+	      (Bool8)1, // Direction control polarity
+	      (UInt8)0, // Delay value
+	      (Bool8)0, // Normal Multi-Drop Mode
+	      (Bool8)0, // Auto Address Detect
+	      (UInt8)0, // Match Address Value
+	      (Bool8)1); // Receive state
 	} else {
-	    // Receive just stuff addressed to {match_address}:
-	    rs485_config.NormalMultiDropMode_State = ENABLE;
-	    rs485_config.AutoAddrDetect_State = ENABLE;
-	    rs485_config.MatchAddrValue = match_address;
-	    rs485_config.Rx_State = DISABLE;
+	    // Receive only data send to {match_address}:
+	    uart1__configure(uart1, 
+	      (Bool8)1, // Auto Direction Control
+	      (UInt8)UART1_RS485_DIRCTRL_DTR, // Direction control pin
+	      (Bool8)1, // Direction control polarity
+	      (UInt8)0, // Delay value
+	      (Bool8)1, // Normal Multi-Drop Mode
+	      (Bool8)1, // Auto Address Detect
+	      (UInt8)match_address, // Match Address Value
+	      (Bool8)0); // Receive state
 	}
-	UART_RS485Config((LPC_UART1_TypeDef *)uart, &rs485_config);
+	//rs485_config.AutoDirCtrl_State = ENABLE;
+	//rs485_config.DirCtrlPin = UART1_RS485_DIRCTRL_DTR;
+	//rs485_config.DirCtrlPol_Level = SET;
+	//rs485_config.DelayValue = 0;
+	//if (match_address == 0xff) {
+	//    // Recieve everything on bus:
+	//    rs485_config.NormalMultiDropMode_State = DISABLE;
+	//    rs485_config.AutoAddrDetect_State = DISABLE;
+	//    rs485_config.MatchAddrValue = 0;
+	//    rs485_config.Rx_State = ENABLE;
+	//} else {
+	//    // Receive just stuff addressed to {match_address}:
+	//    rs485_config.NormalMultiDropMode_State = ENABLE;
+	//    rs485_config.AutoAddrDetect_State = ENABLE;
+	//    rs485_config.MatchAddrValue = match_address;
+	//    rs485_config.Rx_State = DISABLE;
+	//}
+	//UART_RS485Config((LPC_UART1_TypeDef *)uart, &rs485_config);
     }
 
     if (uart == (Uart)LPC_UART0) {
 	// Enable UART Transmit:
-	UART_TxCmd(uart, ENABLE);
+	Uart__transmit_enable(uart, 1);
 
 	// Do not enable transmit interrupt here, since it is handled by
 	// uart_send() function, just to reset Tx Interrupt state for the
@@ -405,10 +430,10 @@ Serial Serial__initialize(
 	}
 
 	// Enable UART Rx interrupt:
-	UART_IntConfig(uart, UART_INTCFG_RBR, ENABLE);
+	Uart__interrupt_configure(uart, UART_INTCFG_RBR, ENABLE);
 
 	// Enable UART line status interrupt:
-	UART_IntConfig(uart, UART_INTCFG_RLS, ENABLE);
+	Uart__interrupt_configure(uart, UART_INTCFG_RLS, ENABLE);
     }
 
     // We are done:
@@ -488,6 +513,10 @@ void Serial__interrupt_receive(
     }
 }
 
+// FIXME: This code feels wrong!!!  It should transfer as many
+// bytes into the FIFO as are available in the ring buffer.
+// The interrupt routine should *never* go into a spin loop
+// waiting for the FIFO to empty.
 void Serial__interrupt_transmit(
   Serial serial)
 {
@@ -499,13 +528,13 @@ void Serial__interrupt_transmit(
     Uart uart = serial->uart;
 
     // Disable THRE interrupt:
-    UART_IntConfig(uart, UART_INTCFG_THRE, DISABLE);
+    Uart__interrupt_configure(uart, UART_INTCFG_THRE, DISABLE);
 
     // Wait for FIFO buffer empty, transfer UART_TX_FIFO_SIZE bytes
     // of data or break whenever ring buffers are empty:
 
     // Wait until THR empty:
-    while (UART_CheckBusy(uart) == SET) {
+    while (Uart__is_transmitting(uart)) {
 	// Do nothing:
     }
 
@@ -514,8 +543,8 @@ void Serial__interrupt_transmit(
 	Frame frame = transmit->frames[transmit->tail];
 	UInt8 ubyte = (UInt8)frame;
 
-        if (UART_Send(uart, &ubyte, 1, NONE_BLOCKING)) {
-	    // Update transmit ring FIFO tail pointer
+	if (Uart__transmit_possible(uart)) {
+	    Uart__byte_put(uart, ubyte);
 	    Ring_Buffer__tail_increment(transmit);
     	} else {
 	    break;
@@ -525,14 +554,14 @@ void Serial__interrupt_transmit(
     // If there is no more data to send, disable the transmit
     // interrupt - else enable it or keep it enabled:
     if (Ring_Buffer__is_empty(transmit)) {
-    	UART_IntConfig(uart, UART_INTCFG_THRE, DISABLE);
+    	Uart__interrupt_configure(uart, UART_INTCFG_THRE, DISABLE);
 
 	// Reset Tx Interrupt state:
     	uart_transmit_interrupt_status = RESET;
     } else {
 	// Set Tx Interrupt state:
 	uart_transmit_interrupt_status = SET;
-    	UART_IntConfig(uart, UART_INTCFG_THRE, ENABLE);
+	Uart__interrupt_configure(uart, UART_INTCFG_THRE, ENABLE);
     }
 }
 
@@ -604,7 +633,7 @@ UInt32 Serial__receive(
     // Temporarily lock out UART receive interrupts during this
     // read so the UART receive interrupt won't cause problems
     // with the index values
-    UART_IntConfig(uart, UART_INTCFG_RBR, DISABLE);
+    Uart__interrupt_configure(uart, UART_INTCFG_RBR, DISABLE);
 
     // Loop until receive buffer ring is empty or until max_bytes expires:
     while ((amount > 0) && (!Ring_Buffer__is_empty(receive))) {
@@ -621,7 +650,7 @@ UInt32 Serial__receive(
     }
 
     // Re-enable UART interrupts:
-    UART_IntConfig(uart, UART_INTCFG_RBR, ENABLE);
+    Uart__interrupt_configure(uart, UART_INTCFG_RBR, ENABLE);
 
     return bytes;
 }
@@ -657,7 +686,7 @@ UInt32 Serial__send(
     // Temporarily lock out UART transmit interrupts during this
     // read so the UART transmit interrupt won't cause problems
     // with the index values:
-    UART_IntConfig(uart, UART_INTCFG_THRE, DISABLE);
+    Uart__interrupt_configure(uart, UART_INTCFG_THRE, DISABLE);
 
     // Loop until transmit run buffer is full or until n_bytes expires:
     while ((amount > 0) && (!Ring_Buffer__is_full(transmit))) {
@@ -680,7 +709,7 @@ UInt32 Serial__send(
 	Serial__interrupt_transmit(serial);
     } else {
 	// Otherwise, re-enable Tx Interrupt: */
-	UART_IntConfig(uart, UART_INTCFG_THRE, ENABLE);
+	Uart__interrupt_configure(uart, UART_INTCFG_THRE, ENABLE);
     }
 
     return bytes;
